@@ -47,9 +47,11 @@ def single_level_dir():
     """Fixture to create a test directory of one level and 2 files at the root."""
     root = test_directory_factory(2)
     yield
-    shutil.rmtree(root_path)
+    shutil.rmtree(root)
 
 
-if __name__ == "__main__":
-    a = test_directory_factory(1, [(2, 2)])
-    print(a)
+@pytest.fixture()
+def single_sub_directory():
+    root = test_directory_factory(1, [(1, 1)])
+    yield
+    shutil.rmtree(root)
