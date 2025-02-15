@@ -66,7 +66,7 @@ class FileHandler(FileSystemEventHandler):
         """
         # With a modified event present we get a bunch of extra event calls. We
         # Need to filter to just the created event!
-        if event.event_type == "created":
+        if event.event_type == "moved":
             file_type = os.path.splitext(event.src_path)
             if file_type[1] in self.__watched_extension or not self.__watched_extension:
                 self._event_actions(event)
