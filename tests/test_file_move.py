@@ -17,9 +17,9 @@ def test_move_sub_directory(single_sub_directory):
 
     watcher.stop_watching()
     assert watcher.current_event["event_type"] == "moved"
-    assert watcher.current_event["file_destination"] == os.path.abspath(
-        os.path.join(new_name, "test_0.ext")
-    )
+    assert os.path.abspath(
+        watcher.current_event["file_destination"]
+    ) == os.path.abspath(os.path.join(new_name, "test_0.ext"))
 
 
 @pytest.mark.usefixtures("single_sub_directory")

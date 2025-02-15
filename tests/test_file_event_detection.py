@@ -19,7 +19,7 @@ def empty_dir_set_up():
 
 @pytest.fixture
 def setup_directory_with_files():
-    empty_path = "./tests/empty_dir/subdir"
+    empty_path = "tests/empty_dir/subdir"
     if os.path.exists(empty_path):
         shutil.rmtree(empty_path)
     os.makedirs(empty_path)
@@ -36,11 +36,14 @@ def test_new_file(empty_dir_set_up):
     watcher.start_watching(empty_dir_set_up)
 
     os.system(f"touch {empty_dir_set_up + "/f1.txt"}")
+    time.sleep(1)
     watcher.stop_watching()
     a = watcher.current_event
 
     assert a["event_type"] == "created"
-    assert a["event_location"] == os.path.abspath(empty_dir_set_up)
+    assert os.path.abspath(a["event_location"]) == os.path.abspath(
+        os.path.join(empty_dir_set_up, "f1.txt")
+    )
 
 
 def test_no_file_created(empty_dir_set_up):
@@ -97,7 +100,9 @@ def test_recursive_file_creation(single_sub_directory):
     watcher.stop_watching()
 
     assert len(watcher.event_history) == 1
-    assert watcher.current_event["event_location"] == os.path.abspath(fname1)
+    assert os.path.abspath(watcher.current_event["event_location"]) == os.path.abspath(
+        fname1
+    )
 
 
 def test_detect_directory_creation(single_level_dir):
@@ -112,7 +117,9 @@ def test_detect_directory_creation(single_level_dir):
 
     watcher.stop_watching()
     assert len(watcher.event_history) == 1
-    assert watcher.current_event["event_location"] == os.path.abspath(dir_name)
+    assert os.path.abspath(watcher.current_event["event_location"]) == os.path.abspath(
+        dir_name
+    )
 
 
 def test_ignore_creation_in_parent_directory(single_sub_directory):
