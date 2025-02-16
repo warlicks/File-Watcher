@@ -1,11 +1,11 @@
 import time
-from watchdog.observers import Observer
+from watchdog.observers.polling import PollingObserver
 from filewatch.file_watch import FileHandler
 
 
 class FileWatcher:
     def __init__(self, handler: FileHandler):
-        self.__observer = Observer()
+        self.__observer = PollingObserver()
         self.__handler = handler
 
     @property

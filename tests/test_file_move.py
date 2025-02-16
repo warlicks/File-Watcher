@@ -27,8 +27,6 @@ def test_move_sub_directory(single_sub_directory):
 # TODO: Mark these as expected to fail on linux.
 @pytest.mark.usefixtures("single_sub_directory")
 def test_move_to_unwatched_dir(single_sub_directory):
-    if sys.platform == "linux":
-        pytest.skip("Only passes on MacOs")
     time.sleep(1)
     fname = "./tests/rootdir/test_0.ext"
     new_name = "./tests/rootdir/level_0a"
@@ -39,7 +37,7 @@ def test_move_to_unwatched_dir(single_sub_directory):
     time.sleep(1)
 
     watcher.stop_watching()
-    assert watcher.handler.current_event["event_type"] == "moved"
+    assert watcher.handler.current_event["event_type"] == "deleted"
 
 
 # TODO: Mark these as expected to fail on linux.
@@ -51,12 +49,9 @@ def test_moved_to_unwatched_parent(single_sub_directory):
     new_name = "./tests/rootdir"
 
     watcher = FileWatcher(FileHandler())
-    watcher.start_watching("./tests/rootdir")
+    watcher.start_watching("./tests/rootdir/level_0a")
     os.system(f"mv {fname} {new_name}")
     time.sleep(1)
 
     watcher.stop_watching()
-    assert watcher.handler.current_event["event_type"] == "moved"
-    assert watcher.handler.current_event["file_destination"] == os.path.abspath(
-        "./tests/rootdir/text_0.ext"
-    )
+    assert watcher.handler.current_event["event_type"] == "deleted"

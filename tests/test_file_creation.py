@@ -61,6 +61,7 @@ def test_new_file_with_existing_files(setup_directory_with_files):
     watcher = FileWatcher(FileHandler())
     watcher.start_watching("./tests/empty_dir/")
     os.system("touch ./tests/empty_dir/file2.txt")
+    time.sleep(1)
     watcher.stop_watching()
 
     assert watcher.handler.current_event["event_type"] == "created"

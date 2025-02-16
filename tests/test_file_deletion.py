@@ -13,9 +13,8 @@ def test_file_deletion(single_level_dir):
     watcher = FileWatcher(FileHandler())
     watcher.start_watching("./tests/rootdir")
 
-    os.remove(fname)
-    time.sleep(0.5)
-
+    os.system(f"rm {fname}")
+    time.sleep(1)
     watcher.stop_watching()
 
     assert watcher.handler.current_event["event_type"] == "deleted"
@@ -46,8 +45,8 @@ def test_file_deletion_subdir(single_sub_directory):
 
     watcher.start_watching("./tests/rootdir", True)
 
-    os.remove(fname)
-    time.sleep(0.5)
+    os.system(f"rm {fname}")
+    time.sleep(1)
 
     watcher.stop_watching()
 
