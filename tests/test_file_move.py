@@ -23,6 +23,7 @@ def test_move_sub_directory(single_sub_directory):
     ) == os.path.abspath(os.path.join(new_name, "test_0.ext"))
 
 
+# TODO: Mark these as expected to fail on linux.
 @pytest.mark.usefixtures("single_sub_directory")
 def test_move_to_unwatched_dir(single_sub_directory):
     time.sleep(1)
@@ -38,6 +39,7 @@ def test_move_to_unwatched_dir(single_sub_directory):
     assert watcher.handler.current_event["event_type"] == "moved"
 
 
+# TODO: Mark these as expected to fail on linux.
 def test_moved_to_unwatched_parent(single_sub_directory):
     time.sleep(1)
     fname = "./tests/rootdir/level_0a/text_0.ext"

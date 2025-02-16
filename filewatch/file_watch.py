@@ -1,9 +1,13 @@
+import datetime
 import os
+import time
 from watchdog.events import (
     DirCreatedEvent,
     DirDeletedEvent,
     DirModifiedEvent,
     DirMovedEvent,
+    FileClosedEvent,
+    FileClosedNoWriteEvent,
     FileCreatedEvent,
     FileDeletedEvent,
     FileModifiedEvent,
@@ -84,20 +88,19 @@ class FileHandler(FileSystemEventHandler):
             a = self._event_actions(event)
             print(a)
 
-    # def on_modified(self, event: DirModifiedEvent | FileModifiedEvent) -> None:
-    #     """Watches for file being modified
+    def on_closed_no_write(self, event: FileClosedNoWriteEvent) -> None:
+        if event.event_type == "closed_no_write":
+            file_type = os.path.splitext(event.src_path)
+            if file_type[1] in self.__watched_extension or not self.__watched_extension:
+                a = self._event_actions(event)
+                print(a)
 
-    #     Does not watch for a directory begin opened.
-
-    #     Args:
-    #         event (DirMovedEvent | FileMovedEvent): A FileSystemEvent
-    #         representing the moving of a file or directory.
-    #         See https://python-watchdog.readthedocs.io/en/stable/api.html#watchdog.events.FileSystemEvent
-    #     """
-    #     file_type = os.path.splitext(event.src_path)
-    #     if file_type[1] in self.__watched_extension or not self.__watched_extension:
-    #         a = self._event_actions(event)
-    #         print(a)
+    def on_closed(self, event: FileClosedEvent) -> None:
+        if event.event_type == "closed":
+            file_type = os.path.splitext(event.src_path)
+            if file_type[1] in self.__watched_extension or not self.__watched_extension:
+                a = self._event_actions(event)
+                print(a)
 
     def _event_actions(self, event):
         """_summary_
@@ -120,6 +123,8 @@ class FileHandler(FileSystemEventHandler):
             self.__current_event = {
                 "event_type": event.event_type,
                 "event_location": event.src_path,
+                "event_sythetic": event.is_synthetic,
+                "event_time": datetime.datetime.now(),
             }
 
         self.__event_history.append(self.__current_event)
