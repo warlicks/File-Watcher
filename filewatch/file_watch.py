@@ -1,19 +1,15 @@
 import datetime
 import os
-import time
+import datetime as dt
 from watchdog.events import (
     DirCreatedEvent,
     DirDeletedEvent,
     DirModifiedEvent,
     DirMovedEvent,
-    FileClosedEvent,
-    FileClosedNoWriteEvent,
     FileCreatedEvent,
     FileDeletedEvent,
     FileModifiedEvent,
     FileMovedEvent,
-    FileOpenedEvent,
-    FileSystemEvent,
     FileSystemEventHandler,
 )
 
@@ -88,19 +84,51 @@ class FileHandler(FileSystemEventHandler):
             a = self._event_actions(event)
             print(a)
 
-    def on_closed_no_write(self, event: FileClosedNoWriteEvent) -> None:
-        if event.event_type == "closed_no_write":
-            file_type = os.path.splitext(event.src_path)
-            if file_type[1] in self.__watched_extension or not self.__watched_extension:
-                a = self._event_actions(event)
-                print(a)
+    def on_modified(self, event: DirModifiedEvent | FileModifiedEvent) -> None:
+        file_type = os.path.splitext(event.src_path)
 
-    def on_closed(self, event: FileClosedEvent) -> None:
-        if event.event_type == "closed":
-            file_type = os.path.splitext(event.src_path)
-            if file_type[1] in self.__watched_extension or not self.__watched_extension:
-                a = self._event_actions(event)
-                print(a)
+        if file_type[1] in self.__watched_extension or not self.__watched_extension:
+            temp = {
+                "event_type": event.event_type,
+                "event_location": event.src_path,
+                "dir_event": event.is_directory,
+                "synth_event": event.is_synthetic,
+                "event_time": dt.datetime.now(),
+            }
+            self._reconcile_modified_events(temp)
+
+    def _reconcile_modified_events(self, temp: dict):
+        """Determines if a modified event was triggered by another event
+
+        When files are created, deleted or moved, a modified event for the directory also
+        fires. The modified event fires after the file event. The since the modified
+        events are redundant we filter them out.
+
+        The redundant events are filtered out if the the previous event in the evnet history
+        is a created, deleted or moved event, the current event is a modfified event
+
+        Args:
+            temp (dict): _description_
+        """
+        if self.__event_history:
+            previous_event = self.__event_history[-1]
+            if (
+                (
+                    previous_event["event_type"] == "created"
+                    or previous_event["event_type"] == "deleted"
+                    or previous_event["event_type"] == "moved"
+                )
+                # and temp["dir_event"]
+                and (temp["event_time"] - previous_event["event_time"])
+                < dt.timedelta(milliseconds=500)
+            ):
+                return
+            else:
+                self.__event_history.append(temp)
+                self.__current_event = temp
+        else:
+            self.__event_history.append(temp)
+            self.__current_event = temp
 
     def _event_actions(self, event):
         """_summary_
@@ -118,6 +146,9 @@ class FileHandler(FileSystemEventHandler):
                 "event_type": event.event_type,
                 "event_location": event.src_path,
                 "file_destination": event.dest_path,
+                "dir_event": event.is_directory,
+                "synth_event": event.is_synthetic,
+                "event_time": datetime.datetime.now(),
             }
         else:
             self.__current_event = {

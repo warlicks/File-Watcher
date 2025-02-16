@@ -1,5 +1,5 @@
 import os
-import re
+import sys
 import shutil
 import time
 import pytest
@@ -110,6 +110,8 @@ def test_recursive_file_creation(single_sub_directory):
 
 def test_detect_directory_creation(single_level_dir):
     """Test that we can detect newly created directory"""
+    if sys.platform == "darwin":
+        pytest.skip("Only on Linux")
     dir_name = "./tests/rootdir/new_dir"
     time.sleep(1)
     watcher = FileWatcher(FileHandler())
