@@ -42,8 +42,6 @@ def test_move_to_unwatched_dir(single_sub_directory):
 
 # TODO: Mark these as expected to fail on linux.
 def test_moved_to_unwatched_parent(single_sub_directory):
-    if sys.platform == "linux":
-        pytest.skip("Only passes on MacOs")
     time.sleep(1)
     fname = "./tests/rootdir/level_0a/text_0.ext"
     new_name = "./tests/rootdir"

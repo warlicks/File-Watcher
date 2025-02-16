@@ -53,8 +53,14 @@ class FileHandler(FileSystemEventHandler):
         if event.event_type == "created":
             file_type = os.path.splitext(event.src_path)
             if file_type[1] in self.__watched_extension or not self.__watched_extension:
-                a = self._event_actions(event)
-                print(a)
+                temp = {
+                    "event_type": event.event_type,
+                    "event_location": event.src_path,
+                    "dir_event": event.is_directory,
+                    "synth_event": event.is_synthetic,
+                    "event_time": dt.datetime.now(),
+                }
+                self._reconcile_created_events(temp)
 
     def on_moved(self, event: DirMovedEvent | FileMovedEvent) -> None:
         """Watches for file or directory being moved.
@@ -126,6 +132,27 @@ class FileHandler(FileSystemEventHandler):
             else:
                 self.__event_history.append(temp)
                 self.__current_event = temp
+        else:
+            self.__event_history.append(temp)
+            self.__current_event = temp
+
+    def _reconcile_created_events(self, temp):
+        if self.__event_history:
+            previous_event = self.__event_history[-1]
+            if (
+                previous_event["event_type"] == "modified"
+                and previous_event["dir_event"]
+                and (temp["event_time"] - previous_event["event_time"])
+                < dt.timedelta(milliseconds=500)
+            ):
+                self.__event_history.pop()
+                self.__event_history.append(temp)
+                self.__current_event = temp
+            elif previous_event["event_type"] == "created":
+                self.__event_history.append(temp)
+                self.__current_event = temp
+            else:
+                return
         else:
             self.__event_history.append(temp)
             self.__current_event = temp
