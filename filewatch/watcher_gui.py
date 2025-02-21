@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import ttk, filedialog
+from tkinter import StringVar, Toplevel, ttk, filedialog
 
 
 class WatcherGUI(tk.Tk):
@@ -19,6 +19,10 @@ class WatcherGUI(tk.Tk):
 
         self.__start_button = self.frame_controls.start_button
         self.__stop_button = self.frame_controls.end_button
+
+        self.new_window_button = ActionButton(self, "Open New Window")
+        self.new_window_button.pack()
+        self.new_window_button.bind("<Button>", lambda e: QueryWindow(self))
 
     @property
     def start_button(self):
@@ -81,6 +85,30 @@ class ActionFrame(ttk.Frame):
 class ActionButton(ttk.Button):
     def __init__(self, parent, text):
         super().__init__(parent, text=text)
+
+
+class QueryWindow(Toplevel):
+    def __init__(self, parent):
+        super().__init__(parent)
+        self.title("Query Window")
+        self.geometry("600x400")
+
+        self.query_frame = QueryFrame(self)
+        self.query_frame.pack()
+
+
+class QueryFrame(ttk.Frame):
+    def __init__(self, parent):
+        super().__init__(parent)
+        self.__query_choice = StringVar()
+        self.menu_wigit = ttk.OptionMenu(
+            self,
+            self.__query_choice,
+            "File Type",
+            "File Action",
+            "File Directory",
+        )
+        self.menu_wigit.pack(padx=5)
 
 
 if __name__ == "__main__":
