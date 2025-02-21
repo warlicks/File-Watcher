@@ -56,7 +56,7 @@ class FileWatcher:
         """
         self.__directory = directory
         self.__recursive = recursive
-        self.handler.watched_extension = file_extension
+        self.__handler.watched_extension = file_extension
         self.__observer.schedule(self.__handler, directory, recursive=recursive)
 
         self.__observer.start()
