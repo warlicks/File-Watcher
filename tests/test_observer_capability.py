@@ -1,8 +1,6 @@
 import os
 import time
-from xml.sax import handler
 import pytest
-from filewatch import watcher
 from filewatch.file_watch import FileHandler
 from filewatch.watcher import FileWatcher
 
