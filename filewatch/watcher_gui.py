@@ -20,9 +20,10 @@ class WatcherGUI(tk.Tk):
         self.__start_button = self.frame_controls.start_button
         self.__stop_button = self.frame_controls.end_button
 
-        self.new_window_button = ActionButton(self, "Open New Window")
+        self.new_window_button = ActionButton(self, "Query Change History")
         self.new_window_button.pack()
-        self.new_window_button.bind("<Button>", lambda e: QueryWindow(self))
+        self.new_window_button.configure(command=self.spawn_query_window)
+        self.__query_choice = StringVar()
 
     @property
     def start_button(self):
@@ -36,6 +37,13 @@ class WatcherGUI(tk.Tk):
     def dir_to_watch(self):
         return self.__dir_to_watch.get()
 
+    @property
+    def query_choice(self):
+        return self.__query_choice
+
+    def spawn_query_window(self):
+        QueryWindow(self, self.query_choice)
+
 
 class DirectorySelection(ttk.Frame):
     """Class For Managing ttk Frame that allow you to select a directory.
@@ -43,13 +51,10 @@ class DirectorySelection(ttk.Frame):
     Inherits from ttk.Frame
 
     Also capture the selected directory and manages access to the selected directory.
-
     """
 
     def __init__(self, parent):
         """Creates an instance of a DirectorySelectionFrame
-
-
 
         Args:
             parent: The parent object where the frame is being added.
@@ -58,9 +63,11 @@ class DirectorySelection(ttk.Frame):
         self.__selected_directory = tk.StringVar()
 
         ttk.Label(self, text="Directory:").pack(side=tk.LEFT)
-        self.dir_entry = ttk.Entry(self, width=40)
+        self.dir_entry = ttk.Entry(
+            self, width=40, textvariable=self.__selected_directory
+        )
         self.dir_entry.pack(side=tk.LEFT, padx=5)
-        ttk.Button(self, text="Browse", command=self.select_directory).pack(
+        tk.Button(self, text="Select Directory", command=self.select_directory).pack(
             side=tk.LEFT
         )
 
@@ -82,33 +89,56 @@ class ActionFrame(ttk.Frame):
         self.end_button.pack(side=tk.LEFT, padx=5)
 
 
-class ActionButton(ttk.Button):
+class ActionButton(tk.Button):
     def __init__(self, parent, text):
         super().__init__(parent, text=text)
 
 
 class QueryWindow(Toplevel):
-    def __init__(self, parent):
+    def __init__(self, parent, query_var):
         super().__init__(parent)
         self.title("Query Window")
         self.geometry("600x400")
+        self.__query_var = query_var
 
-        self.query_frame = QueryFrame(self)
+        self.query_frame = QueryFrame(self, self.query_var)
         self.query_frame.pack()
+
+    @property
+    def query_var(self):
+        return self.__query_var
 
 
 class QueryFrame(ttk.Frame):
-    def __init__(self, parent):
+    def __init__(self, parent, query_var):
         super().__init__(parent)
-        self.__query_choice = StringVar()
-        self.menu_wigit = ttk.OptionMenu(
+        self.__query_choice = query_var
+        self.__query_label_text = StringVar()
+        self.menu_wigit = tk.OptionMenu(
             self,
             self.__query_choice,
             "File Type",
             "File Action",
             "File Directory",
         )
-        self.menu_wigit.pack(padx=5)
+        self.menu_wigit.pack()
+        label_test = ttk.Label(self, textvariable=self.__query_choice)
+        label_test.pack(side=tk.LEFT)
+        tk.Entry(self).pack(side=tk.LEFT, padx=10)
+        self.__search_button = ActionButton(self, "Start Search")
+        self.__search_button.pack()
+
+    @property
+    def query_choice(self):
+        return self.__query_choice
+
+    def query_entry_text(self):
+        if self.__query_choice.get() == "File Type":
+            self.__query_label_text.set("Search For File Extension")
+        elif self.__query_choice.get() == "File Action":
+            self.__query_label_text.set("Search For File Action")
+        elif self.__query_choice.get() == "File Directory":
+            self.__query_label_text.set("Search By File Directory")
 
 
 if __name__ == "__main__":
