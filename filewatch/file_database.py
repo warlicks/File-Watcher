@@ -47,8 +47,17 @@ class FileWatcherDatabase:
             print(e)
 
     def __insert_data_sql(self):
-        # TODO: Write Query For Inserting Data
-        pass
+        """Inserts a new record into the file_events table """
+        if self.__conn is None:
+            print('Error: Database connection is not established')
+            return
+
+        try:
+            c = self.__conn.cursor()
+            c.execute(self.__insert_data_sql(), (event_id, event_time, event_type, event_location, file_type, move_destinatino))
+            self.__conn.commit()
+        except sqlite3.Error as e:
+            print(f'Database error:{e}')
 
     def query_by_file_extension(self, ext_param: str):
         """Queries the database by file type.
@@ -82,13 +91,15 @@ class FileWatcherDatabase:
         return sql
 
     def __file_extension_query(self) -> str:
-        sql = """
+        """returns SQL query for selecting by file extension"""
+        return """
+        
         SELECT
             *
 
         FROM  file_events
 
         Where
-            file_type=?
+            file_type = ?
 
         """
