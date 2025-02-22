@@ -1,4 +1,6 @@
 from .watcher import FileWatcher
+#from filewatch.watcher import FileWatcher
+
 from .watcher_gui import WatcherGUI
 
 
