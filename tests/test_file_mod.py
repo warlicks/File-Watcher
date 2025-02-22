@@ -5,7 +5,7 @@ from filewatch.file_watch import FileHandler
 from filewatch.watcher import FileWatcher
 
 
-def test_opened_no_mod(single_level_dir: None):
+def test_opened_no_mod(single_level_dir):
     """Test that we don't get a modified event w/o modification"""
     time.sleep(0.5)
     fname = os.path.abspath("./tests/rootdir/test_0.ext")
@@ -39,7 +39,7 @@ def test_opened_no_mod_sub_dir(single_sub_directory: None):
     assert not watcher.handler.event_history
 
 
-def test_opened_with_mod(single_level_dir: None):
+def test_opened_with_mod(single_level_dir):
     """Test ability to detect file opened and unmodified"""
     time.sleep(0.5)
     fname = os.path.abspath("./tests/rootdir/test_0.py")
