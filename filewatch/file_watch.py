@@ -94,7 +94,7 @@ class FileHandler(FileSystemEventHandler):
     def watched_extension(self, value: list):
         self.__watched_extension = value
 
-    def on_created(self, event: DirCreatedEvent | FileCreatedEvent) -> None:
+    def on_created(self, event: Union[DirCreatedEvent, FileCreatedEvent]) -> None:
         """Watches for the creation of a file or directory.
 
         Args:
@@ -111,9 +111,11 @@ class FileHandler(FileSystemEventHandler):
                     "dir_event": event.is_directory,
                     "event_time": dt.datetime.now(),
                 }
+                # TODO: refactor this to take an event.
                 self._reconcile_created_events(temp)
+                self.notify()
 
-    def on_moved(self, event: DirMovedEvent | FileMovedEvent) -> None:
+    def on_moved(self, event: Union[DirMovedEvent, FileMovedEvent]) -> None:
         """Watches for file or directory being moved.
 
         Args:
@@ -128,7 +130,7 @@ class FileHandler(FileSystemEventHandler):
             if file_type[1] in self.__watched_extension or not self.__watched_extension:
                 self._event_actions(event)
 
-    def on_deleted(self, event: DirDeletedEvent | FileDeletedEvent) -> None:
+    def on_deleted(self, event: Union[DirDeletedEvent, FileDeletedEvent]) -> None:
         """Watches for file or directory being deleted.
 
         Args:
@@ -141,7 +143,7 @@ class FileHandler(FileSystemEventHandler):
             a = self._event_actions(event)
             print(a)
 
-    def on_modified(self, event: DirModifiedEvent | FileModifiedEvent) -> None:
+    def on_modified(self, event: Union[DirModifiedEvent, FileModifiedEvent]) -> None:
         """Watches for file or directory being modified.
 
         Args:
