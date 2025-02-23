@@ -23,6 +23,10 @@ class WatcherGUI(tk.Tk):
         self.new_window_button = ActionButton(self, "Query Change History")
         self.new_window_button.pack()
         self.new_window_button.configure(command=self.spawn_query_window)
+
+        # We define this here so we can pass it to the Query window when it is spawned on the button click.
+        # TODO: Assign the other variables that need to pass back up from the new window
+        # TODO: Create the start search button and pass it down so it can be accessed from the main window
         self.__query_choice = StringVar()
 
     @property
