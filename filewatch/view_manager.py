@@ -40,15 +40,41 @@ class ViewManager:
         self.__watcher.stop_watching()
 
     def start_database_search(self):
-        # Logic to decide the query.
+        """Handles DB search requests"""
+        query_type = self.__view.query_choice.get()
+        query_value = self.__view.query_string.get()
 
-        # Start the query()
+        if query_type == "File Type":
+            result =  self.search_by_extension(query_value)
+        elif query_type == "File Action":
+            result = self.search_by_action(query_value)
+        elif query_type == "File Directory":
+            result = self.search_by_directory(query_value)
+        else:
+            result = "Invalid Query Type"
 
-        # Dummy for dev.
-        print(
-            f"Started Database Query by {self.__view.query_choice.get()}, {self.__view.query_string.get()}"
-        )
-        self.__view.query_result.set("Fake Result")
+        #For UI
+        self.__view.query_result.set(result)
+        print(f"Search Query: {query_type} -> {query_value} | Result: {result}")
+        # print(
+        #     f"Started Database Query by {self.__view.query_choice.get()}, {self.__view.query_string.get()}"
+        # )
+        # self.__view.query_result.set("Fake Result")
+
+    def search_by_extension(self, extension: str) -> str:
+        """Search for files with a given extension."""
+        # Placeholder logic
+        return f"Searching for files with extension {extension}"
+
+    def search_by_action(self, action: str) -> str:
+        """Search for files by action (created, modified, etc.)."""
+        # Placeholder logic
+        return f"Searching for files with action {action}"
+
+    def search_by_directory(self, directory: str) -> str:
+        """Search for files in a specified directory."""
+        # Placeholder logic
+        return f"Searching in directory {directory}"
 
     def notify(self):
 
