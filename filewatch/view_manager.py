@@ -13,6 +13,7 @@ class ViewManager:
         # defining the button in the viewer layer.
         self.__view.start_button.configure(command=self.send_start_watching)
         self.__view.stop_button.configure(command=self.send_stop_watching)
+        self.__view.search_function = self.start_database_search
 
     def send_start_watching(self):
         """Manages starting the file watcher.
@@ -37,6 +38,17 @@ class ViewManager:
         """
         print(f"Stopped Watching {self.__view.dir_to_watch}")
         self.__watcher.stop_watching()
+
+    def start_database_search(self):
+        # Logic to decide the query.
+
+        # Start the query()
+
+        # Dummy for dev.
+        print(
+            f"Started Database Query by {self.__view.query_choice.get()}, {self.__view.query_string.get()}"
+        )
+        self.__view.query_result.set("Fake Result")
 
     def notify(self):
 

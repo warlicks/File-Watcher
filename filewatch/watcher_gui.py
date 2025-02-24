@@ -1,5 +1,6 @@
 import tkinter as tk
 from tkinter import StringVar, Toplevel, ttk, filedialog
+from typing import Union, Callable
 
 
 class WatcherGUI(tk.Tk):
@@ -17,17 +18,23 @@ class WatcherGUI(tk.Tk):
         self.frame_controls = ActionFrame(self)
         self.frame_controls.pack(pady=5)
 
+        # Create attributes for the start & stop buttons.
+        # TODO: Refactor so the properties return these. We don't need to return @ this level to make them available to the ViewMangaer.
         self.__start_button = self.frame_controls.start_button
         self.__stop_button = self.frame_controls.end_button
 
+        # Setup a button to open the query history window.
         self.new_window_button = ActionButton(self, "Query Change History")
         self.new_window_button.pack()
         self.new_window_button.configure(command=self.spawn_query_window)
 
-        # We define this here so we can pass it to the Query window when it is spawned on the button click.
-        # TODO: Assign the other variables that need to pass back up from the new window
-        # TODO: Create the start search button and pass it down so it can be accessed from the main window
+        # Set Up Variables that need to be passed to the query window.
         self.__query_choice = StringVar()
+        self.__query_string = StringVar()
+        self.__query_results = StringVar()
+
+        # We'll pass the search function "down" to the new window. Set via ViewManager.
+        self.__search_function: Union[None | Callable] = None
 
     @property
     def start_button(self):
@@ -38,15 +45,38 @@ class WatcherGUI(tk.Tk):
         return self.__stop_button
 
     @property
-    def dir_to_watch(self):
+    def dir_to_watch(self) -> str:
         return self.__dir_to_watch.get()
 
     @property
-    def query_choice(self):
+    def query_choice(self) -> StringVar:
         return self.__query_choice
 
+    @property
+    def query_string(self) -> StringVar:
+        return self.__query_string
+
+    @property
+    def query_result(self) -> StringVar:
+        return self.__query_results
+
+    @property
+    def search_function(self):
+        return self.__search_function
+
+    @search_function.setter
+    def search_function(self, func: Callable):
+        self.__search_function = func
+
     def spawn_query_window(self):
-        QueryWindow(self, self.query_choice)
+        # Use our getter methods to prevent access to internal attributes.
+        self.__query_window = QueryWindow(
+            self,
+            self.query_choice,
+            self.query_string,
+            search_function=self.search_function,
+            query_results=self.query_result,
+        )
 
 
 class DirectorySelection(ttk.Frame):
@@ -99,14 +129,26 @@ class ActionButton(tk.Button):
 
 
 class QueryWindow(Toplevel):
-    def __init__(self, parent, query_var):
+    def __init__(
+        self,
+        parent,
+        query_var: StringVar,
+        query_string: StringVar,
+        search_function: Callable,
+        query_results: StringVar,
+    ):
         super().__init__(parent)
         self.title("Query Window")
         self.geometry("600x400")
         self.__query_var = query_var
 
-        self.query_frame = QueryFrame(self, self.query_var)
-        self.query_frame.pack()
+        self.__query_frame = QueryFrame(
+            self, self.query_var, query_string, search_function
+        )
+        self.__query_frame.pack()
+
+        self.__query_result_frame = QueryResultFrame(self, query_results)
+        self.__query_result_frame.pack()
 
     @property
     def query_var(self):
@@ -114,10 +156,16 @@ class QueryWindow(Toplevel):
 
 
 class QueryFrame(ttk.Frame):
-    def __init__(self, parent, query_var):
+    def __init__(
+        self,
+        parent,
+        query_var: StringVar,
+        query_string: StringVar,
+        search_function: Callable,
+    ):
         super().__init__(parent)
         self.__query_choice = query_var
-        self.__query_label_text = StringVar()
+        self.__query_string = query_string
         self.menu_wigit = tk.OptionMenu(
             self,
             self.__query_choice,
@@ -128,21 +176,19 @@ class QueryFrame(ttk.Frame):
         self.menu_wigit.pack()
         label_test = ttk.Label(self, textvariable=self.__query_choice)
         label_test.pack(side=tk.LEFT)
-        tk.Entry(self).pack(side=tk.LEFT, padx=10)
+        tk.Entry(self, textvariable=self.__query_string).pack(side=tk.LEFT, padx=10)
         self.__search_button = ActionButton(self, "Start Search")
+        self.__search_button.config(command=search_function)
         self.__search_button.pack()
 
-    @property
-    def query_choice(self):
-        return self.__query_choice
 
-    def query_entry_text(self):
-        if self.__query_choice.get() == "File Type":
-            self.__query_label_text.set("Search For File Extension")
-        elif self.__query_choice.get() == "File Action":
-            self.__query_label_text.set("Search For File Action")
-        elif self.__query_choice.get() == "File Directory":
-            self.__query_label_text.set("Search By File Directory")
+class QueryResultFrame(ttk.Frame):
+    def __init__(self, parent, query_results: StringVar):
+        super().__init__(parent)
+
+        ttk.Label(self, text="Query Results").pack(anchor=tk.W)
+        log_text = ttk.Label(self, textvariable=query_results)
+        log_text.pack(fill=tk.BOTH, expand=True)
 
 
 if __name__ == "__main__":
