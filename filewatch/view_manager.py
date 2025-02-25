@@ -61,20 +61,41 @@ class ViewManager:
         # )
         # self.__view.query_result.set("Fake Result")
 
+    def execute_query(self, query: str, params: tuple) -> str:
+        """Helper method that runs DB queries and returns results as a formatted string"""
+        try:
+            conn = sqlite3.connect("file_watcher.db")  ##stilll have to find actual path
+            cursor = conn.cursor()
+            cursor.execute(query, params)
+            results = cursor.fetchall()
+            conn.close()
+
+            if not results:
+                return "No results found."
+
+            #return "\n".join([", ".join(map(str, row)) for row in results])
+
+        except sqlite3.Error as e:
+            return f"Database error: {str(e)}"
+
+
     def search_by_extension(self, extension: str) -> str:
         """Search for files with a given extension."""
-        # Placeholder logic
-        return f"Searching for files with extension {extension}"
+        query = "SELECT filename,  directory, action, timestamp FROM file_event WHERE filename LIKE ?"
+        params = (f'%.{extension}',)
+        return self.execute_query(query, params)
 
     def search_by_action(self, action: str) -> str:
         """Search for files by action (created, modified, etc.)."""
-        # Placeholder logic
-        return f"Searching for files with action {action}"
+        query = "SELECT filename, directory, timestamp FROM file_events WHERE action = ?"
+        params = (action,)
+        return self.execute_query(query, params)
 
     def search_by_directory(self, directory: str) -> str:
         """Search for files in a specified directory."""
-        # Placeholder logic
-        return f"Searching in directory {directory}"
+        query = "SELECTfilename, action, timestamp FROM file_events WHERE directory = ?"
+        params = (directory,)
+        return self.execute_query(query, params)
 
     def notify(self):
 
