@@ -34,9 +34,10 @@ def setup_directory_with_files():
 def test_new_file(empty_dir_set_up):
     """Test that creation of a new file is detected."""
     watcher = FileWatcher(FileHandler())
+    fname = os.path.join(empty_dir_set_up, "f1.txt")
     watcher.start_watching(empty_dir_set_up)
 
-    os.system(f"touch {empty_dir_set_up + "/f1.txt"}")
+    os.system(f"touch {fname}")
     time.sleep(1)
     watcher.stop_watching()
     a = watcher.handler.current_event

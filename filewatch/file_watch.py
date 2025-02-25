@@ -94,7 +94,11 @@ class FileHandler(FileSystemEventHandler):
     def watched_extension(self, value: list):
         self.__watched_extension = value
 
-    def on_created(self, event: DirCreatedEvent | FileCreatedEvent) -> None:
+    @property
+    def registered_observers(self):
+        return self.__registered_observers
+
+    def on_created(self, event: Union[DirCreatedEvent, FileCreatedEvent]) -> None:
         """Watches for the creation of a file or directory.
 
         Args:
@@ -111,9 +115,11 @@ class FileHandler(FileSystemEventHandler):
                     "dir_event": event.is_directory,
                     "event_time": dt.datetime.now(),
                 }
+                # TODO: refactor this to take an event not the dict.
                 self._reconcile_created_events(temp)
+                self.notify()
 
-    def on_moved(self, event: DirMovedEvent | FileMovedEvent) -> None:
+    def on_moved(self, event: Union[DirMovedEvent, FileMovedEvent]) -> None:
         """Watches for file or directory being moved.
 
         Args:
@@ -127,8 +133,9 @@ class FileHandler(FileSystemEventHandler):
             file_type = os.path.splitext(event.src_path)
             if file_type[1] in self.__watched_extension or not self.__watched_extension:
                 self._event_actions(event)
+                self.notify()
 
-    def on_deleted(self, event: DirDeletedEvent | FileDeletedEvent) -> None:
+    def on_deleted(self, event: Union[DirDeletedEvent, FileDeletedEvent]) -> None:
         """Watches for file or directory being deleted.
 
         Args:
@@ -138,10 +145,10 @@ class FileHandler(FileSystemEventHandler):
         """
         file_type = os.path.splitext(event.src_path)
         if file_type[1] in self.__watched_extension or not self.__watched_extension:
-            a = self._event_actions(event)
-            print(a)
+            self._event_actions(event)
+            self.notify()
 
-    def on_modified(self, event: DirModifiedEvent | FileModifiedEvent) -> None:
+    def on_modified(self, event: Union[DirModifiedEvent, FileModifiedEvent]) -> None:
         """Watches for file or directory being modified.
 
         Args:
@@ -160,6 +167,7 @@ class FileHandler(FileSystemEventHandler):
                 "event_time": dt.datetime.now(),
             }
             self._reconcile_modified_events(temp)
+            self.notify()
 
     def _reconcile_modified_events(self, temp: dict):
         """Determines if a modified event was triggered by another event
@@ -257,11 +265,35 @@ class FileHandler(FileSystemEventHandler):
         return self.__current_event
 
     def register_observers(self, observer):
+        """Registers observers that want to be notified about file changes.
+
+        Registered observers need to implement a notify method.
+
+        Args:
+            observer: A object that wants to be notified about a file event.
+              Object must have a notify method.
+
+        Raises:
+            AttributeError: Error occurs when the provided object does not have a
+              notify method.
+        """
+        if not hasattr(observer, "notify"):
+            raise AttributeError(
+                "Notify Method Is Not Implemented. Cannot register observer"
+            )
         self.__registered_observers.append(observer)
 
     def deregister_observers(self, observer):
+        """Removes an observer from the list of observers to be notified when an event
+        occurs.
+
+        Args:
+            observer: The observer object being removed from the list of
+              registered observers.
+        """
         self.__registered_observers.remove(observer)
 
     def notify(self) -> None:
+        """Notify all the observers of an event change."""
         for observer in self.__registered_observers:
             observer.notify(self.current_event)
