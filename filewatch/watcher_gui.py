@@ -1,11 +1,18 @@
 import tkinter as tk
-from tkinter import StringVar, Toplevel, ttk, filedialog
+from tkinter import W, E, N, S, StringVar, Toplevel, ttk, filedialog
 from typing import Union, Callable
 
 
 class WatcherGUI(tk.Tk):
 
-    def __init__(self):
+    def __init__(self, controller=None):
+        """_summary_
+
+        _extended_summary_
+
+        Args:
+            controller (_type_, optional): _description_. Defaults to None.
+        """
         super().__init__()
 
         self.title("File Watcher")
@@ -35,6 +42,8 @@ class WatcherGUI(tk.Tk):
 
         # We'll pass the search function "down" to the new window. Set via ViewManager.
         self.__search_function: Union[None | Callable] = None
+
+        # define frame for query results to pass down to the query window.
 
     @property
     def start_button(self):
@@ -75,7 +84,6 @@ class WatcherGUI(tk.Tk):
             self.query_choice,
             self.query_string,
             search_function=self.search_function,
-            query_results=self.query_result,
         )
 
 
@@ -135,11 +143,10 @@ class QueryWindow(Toplevel):
         query_var: StringVar,
         query_string: StringVar,
         search_function: Callable,
-        query_results: StringVar,
     ):
         super().__init__(parent)
         self.title("Query Window")
-        self.geometry("600x400")
+        self.geometry("800x600")
         self.__query_var = query_var
 
         self.__query_frame = QueryFrame(
@@ -147,8 +154,11 @@ class QueryWindow(Toplevel):
         )
         self.__query_frame.pack()
 
-        self.__query_result_frame = QueryResultFrame(self, query_results)
-        self.__query_result_frame.pack()
+        # Define Frame for Query Results
+        ttk.Label(self, text="Query Resutls").pack(anchor=W, padx=5, pady=5)
+
+        self.__query_result_frame = TableFrame(self, columns=["File", "Action", "Time"])
+        self.__query_result_frame.pack(fill=tk.BOTH, expand=True)
 
     @property
     def query_var(self):
@@ -163,32 +173,66 @@ class QueryFrame(ttk.Frame):
         query_string: StringVar,
         search_function: Callable,
     ):
-        super().__init__(parent)
+        super().__init__(parent, padding=(10, 10, 10, 10))
         self.__query_choice = query_var
         self.__query_string = query_string
+        self.__label_query_option = ttk.Label(self, text="Select Query Option:")
+        self.__label_query_option.grid(row=0, column=1, sticky=W)
         self.menu_wigit = tk.OptionMenu(
             self,
             self.__query_choice,
             "File Type",
             "File Action",
             "File Directory",
+            "Action Time",
         )
-        self.menu_wigit.pack()
-        label_test = ttk.Label(self, textvariable=self.__query_choice)
-        label_test.pack(side=tk.LEFT)
-        tk.Entry(self, textvariable=self.__query_string).pack(side=tk.LEFT, padx=10)
+        self.menu_wigit.grid(row=0, column=2, sticky=(W, E))
+        ttk.Label(self, text="Enter Query String:").grid(
+            row=1, column=1, sticky=W, padx=1, pady=5
+        )
+        ttk.Entry(self, textvariable=self.__query_string).grid(
+            row=1, column=2, columnspan=2, rowspan=2, pady=5, sticky=(W, E)
+        )
         self.__search_button = ActionButton(self, "Start Search")
         self.__search_button.config(command=search_function)
-        self.__search_button.pack()
+        self.__search_button.grid(row=3, column=2, pady=5, sticky=(W, E))
 
 
-class QueryResultFrame(ttk.Frame):
-    def __init__(self, parent, query_results: StringVar):
+class TableFrame(ttk.Frame):
+    """
+    A class used to represent a TableFrame which inherits from ttk.Frame and
+    contains a table made out of tree widgets.
+
+
+    Methods
+    -------
+    insert_row(self, values)
+        Inserts a row into the table with the given values.
+    clear_table(self)
+        Clears all rows from the table.
+    """
+
+    def __init__(self, parent, columns):
+        """
+        Initializes the Treeview widget within a tkinter Frame.
+        Args:
+            parent (tkinter.Widget): The parent widget.
+            columns (list): A list of column names for the Treeview.
+        """
+
         super().__init__(parent)
+        self.tree = ttk.Treeview(self, columns=columns, show="headings")
+        for col in columns:
+            self.tree.heading(col, text=col)
+            self.tree.column(col, anchor=tk.CENTER)
+        self.tree.pack(fill=tk.BOTH, expand=True)
 
-        ttk.Label(self, text="Query Results").pack(anchor=tk.W)
-        log_text = ttk.Label(self, textvariable=query_results)
-        log_text.pack(fill=tk.BOTH, expand=True)
+    def insert_row(self, values):
+        self.tree.insert("", tk.END, values=values)
+
+    def clear_table(self):
+        for row in self.tree.get_children():
+            self.tree.delete(row)
 
 
 if __name__ == "__main__":
