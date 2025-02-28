@@ -1,5 +1,6 @@
 import tkinter as tk
 from tkinter import W, E, N, S, StringVar, Toplevel, ttk, filedialog
+from tokenize import String
 from typing import Union, Callable
 
 
@@ -16,75 +17,66 @@ class WatcherGUI(tk.Tk):
         super().__init__()
 
         self.title("File Watcher")
-        self.geometry("600x400")
+        self.geometry("1000x800")
 
         self.directory_selection_frame = DirectorySelection(self)
-        self.directory_selection_frame.pack(pady=10)
+        self.directory_selection_frame.pack(
+            pady=10,
+        )  # side=tk.LEFT)
         self.__dir_to_watch = self.directory_selection_frame.selected_directory
 
         self.frame_controls = ActionFrame(self)
-        self.frame_controls.pack(pady=5)
+        self.frame_controls.pack(pady=5, padx=5)  # , side=tk.LEFT)
 
-        # Create attributes for the start & stop buttons.
-        # TODO: Refactor so the properties return these. We don't need to return @ this level to make them available to the ViewMangaer.
-        self.__start_button = self.frame_controls.start_button
-        self.__stop_button = self.frame_controls.end_button
+        self.__query_frame = QueryWindow(self)
+        self.__query_frame.pack(
+            pady=5,
+        )  # anchor=E, side=tk.RIGHT)
 
-        # Setup a button to open the query history window.
-        self.new_window_button = ActionButton(self, "Query Change History")
-        self.new_window_button.pack()
-        self.new_window_button.configure(command=self.spawn_query_window)
-
-        # Set Up Variables that need to be passed to the query window.
-        self.__query_choice = StringVar()
-        self.__query_string = StringVar()
-        self.__query_results = StringVar()
-
-        # We'll pass the search function "down" to the new window. Set via ViewManager.
-        self.__search_function: Union[None | Callable] = None
-
-        # define frame for query results to pass down to the query window.
-
+    # Define properties for things we need to pass to the Controller.
     @property
     def start_button(self):
-        return self.__start_button
+        return self.frame_controls.start_button
 
     @property
     def stop_button(self):
-        return self.__stop_button
+        return self.frame_controls.end_button
 
     @property
     def dir_to_watch(self) -> str:
         return self.__dir_to_watch.get()
 
     @property
-    def query_choice(self) -> StringVar:
-        return self.__query_choice
+    def search_button(self):
+        return self.__query_frame.query_frame.search_button
 
     @property
-    def query_string(self) -> StringVar:
-        return self.__query_string
+    def query_choice(self):
+        return self.__query_frame.query_frame.query_choice
 
     @property
-    def query_result(self) -> StringVar:
-        return self.__query_results
+    def file_extension(self):
+        return self.__query_frame.query_frame.query_string
 
     @property
-    def search_function(self):
-        return self.__search_function
+    def query_action_type(self):
+        return self.__query_frame.query_frame.query_action_type
 
-    @search_function.setter
-    def search_function(self, func: Callable):
-        self.__search_function = func
+    @property
+    def query_directory_string(self):
+        return self.__query_frame.query_frame.query_directory_string
 
-    def spawn_query_window(self):
-        # Use our getter methods to prevent access to internal attributes.
-        self.__query_window = QueryWindow(
-            self,
-            self.query_choice,
-            self.query_string,
-            search_function=self.search_function,
-        )
+    @property
+    def start_time_string(self):
+        return self.__query_frame.query_frame.start_time_string
+
+    @property
+    def end_time_string(self):
+        return self.__query_frame.query_frame.end_time_string
+
+    @property
+    def insert_query_result(self):
+        return self.__query_frame.query_result_frame.insert_row
 
 
 class DirectorySelection(ttk.Frame):
@@ -136,69 +128,195 @@ class ActionButton(tk.Button):
         super().__init__(parent, text=text)
 
 
-class QueryWindow(Toplevel):
+class QueryWindow(ttk.Frame):
     def __init__(
         self,
         parent,
-        query_var: StringVar,
-        query_string: StringVar,
-        search_function: Callable,
     ):
         super().__init__(parent)
-        self.title("Query Window")
-        self.geometry("800x600")
-        self.__query_var = query_var
 
-        self.__query_frame = QueryFrame(
-            self, self.query_var, query_string, search_function
-        )
+        self.__query_frame = QueryFrame(self)
         self.__query_frame.pack()
 
         # Define Frame for Query Results
-        ttk.Label(self, text="Query Resutls").pack(anchor=W, padx=5, pady=5)
+        ttk.Label(self, text="Query Results").pack(anchor=W, padx=5, pady=5)
 
-        self.__query_result_frame = TableFrame(self, columns=["File", "Action", "Time"])
+        self.__query_result_frame = QueryResultFrame(
+            self, columns=["File", "Action", "Time"]
+        )
         self.__query_result_frame.pack(fill=tk.BOTH, expand=True)
 
     @property
-    def query_var(self):
-        return self.__query_var
+    def query_frame(self):
+        return self.__query_frame
+
+    @property
+    def query_result_frame(self):
+        return self.__query_result_frame
 
 
 class QueryFrame(ttk.Frame):
     def __init__(
         self,
         parent,
-        query_var: StringVar,
-        query_string: StringVar,
-        search_function: Callable,
     ):
         super().__init__(parent, padding=(10, 10, 10, 10))
-        self.__query_choice = query_var
-        self.__query_string = query_string
-        self.__label_query_option = ttk.Label(self, text="Select Query Option:")
-        self.__label_query_option.grid(row=0, column=1, sticky=W)
-        self.menu_wigit = tk.OptionMenu(
-            self,
-            self.__query_choice,
+
+        menu_vals = [
             "File Type",
             "File Action",
             "File Directory",
             "Action Time",
+        ]
+        # Define the variables for the query options & choices.
+        self.__query_choice = StringVar()
+        self.__query_string = StringVar()
+        self.__query_action_type = StringVar()
+        self.__query_directory_sting = StringVar()
+        self.__start_time_string = StringVar()
+        self.__end_time_string = StringVar()
+
+        ## Select the overall query approach.
+        self.__label_query_option = ttk.Label(self, text="Select Query Option:")
+        self.__label_query_option.grid(row=0, column=1, sticky=W)
+        self.menu_wigit = ttk.OptionMenu(
+            self,
+            self.__query_choice,
+            "File Type",
+            *menu_vals,
+            command=lambda x: self.activate_query_optons(),
         )
         self.menu_wigit.grid(row=0, column=2, sticky=(W, E))
-        ttk.Label(self, text="Enter Query String:").grid(
-            row=1, column=1, sticky=W, padx=1, pady=5
+
+        # Search Options for file type
+        self.__file_type_label = ttk.Label(self, text="Enter File Type:")
+        self.__file_type_label.grid(row=1, column=0, sticky=W, padx=1, pady=5)
+        self.__file_type_entry = ttk.Entry(self, textvariable=self.__query_string)
+        self.__file_type_entry.grid(row=1, column=1, pady=5, sticky=(W, E))
+
+        # search options for file action.
+        self.__action_menu_lable = ttk.Label(self, text="Select Action:")
+        self.__action_menu_lable.grid(row=1, column=2, pady=5, sticky=(W, E))
+        self.__action_menu = tk.OptionMenu(
+            self,
+            self.__query_action_type,
+            "Created",
+            "Moved",
+            "Deleted",
+            "Modified",
         )
-        ttk.Entry(self, textvariable=self.__query_string).grid(
-            row=1, column=2, columnspan=2, rowspan=2, pady=5, sticky=(W, E)
+        self.__action_menu.grid(row=1, column=3, sticky=(W, E))
+        self.__action_menu.config(state="disabled")
+
+        # Search options for file directory.
+        self.__file_directory_label = ttk.Label(self, text="Enter Directory:")
+        self.__file_directory_label.grid(row=2, column=0, sticky=W, padx=1, pady=5)
+        self.__file_directory_label.config(state="disabled")
+        self.__file_directory_entry = ttk.Entry(
+            self, textvariable=self.__query_directory_sting
         )
+        self.__file_directory_entry.grid(row=2, column=1, pady=5, sticky=(W, E))
+        self.__file_directory_entry.config(state="disabled")
+
+        # Search Options for action time.
+        self.__start_time_entry_lable = ttk.Label(self, text="Enter Start Time:")
+        self.__start_time_entry_lable.grid(row=2, column=2, sticky=W, padx=1, pady=5)
+        self.__start_time_entry_lable.config(state="disabled")
+        self.__start_time_entry = ttk.Entry(self, textvariable=self.__start_time_string)
+        self.__start_time_entry.grid(row=2, column=3, pady=5, sticky=(W, E))
+        self.__start_time_entry.config(state="disabled")
+
+        self.__end_time_entry_label = ttk.Label(self, text="& End Time:")
+        self.__end_time_entry_label.grid(row=2, column=4, sticky=W, padx=1, pady=5)
+        self.__end_time_entry_label.config(state="disabled")
+        self.__end_time_entry = ttk.Entry(self, textvariable=self.__end_time_string)
+        self.__end_time_entry.grid(row=2, column=5, pady=5, sticky=(W, E))
+        self.__end_time_entry.config(state="disabled")
+
         self.__search_button = ActionButton(self, "Start Search")
-        self.__search_button.config(command=search_function)
-        self.__search_button.grid(row=3, column=2, pady=5, sticky=(W, E))
+        self.__search_button.grid(row=4, column=2, pady=5, sticky=(W, E))
+
+    @property
+    def search_button(self):
+        return self.__search_button
+
+    @property
+    def query_choice(self):
+        return self.__query_choice
+
+    @property
+    def query_string(self):
+        return self.__query_string
+
+    @property
+    def query_action_type(self):
+        return self.__query_action_type
+
+    @property
+    def query_directory_string(self):
+        return self.__query_directory_sting
+
+    @property
+    def start_time_string(self):
+        return self.__start_time_string
+
+    @property
+    def end_time_string(self):
+        return self.__end_time_string
+
+    def activate_query_optons(self):
+        """Manages the state of the query options based on the selected query type.
+        Only the entry choices that are relevant to the selected query approach are enabled.
+        """
+
+        if self.__query_choice.get() == "File Type":
+            self.__action_menu_lable.config(state="disabled")
+            self.__action_menu.config(state="disabled")
+            self.__file_type_label.config(state="normal")
+            self.__file_type_entry.config(state="normal")
+            self.__file_directory_label.config(state="disabled")
+            self.__file_directory_entry.config(state="disabled")
+
+            self.__start_time_entry_lable.config(state="disabled")
+            self.__start_time_entry.config(state="disabled")
+            self.__end_time_entry_label.config(state="disabled")
+            self.__end_time_entry.config(state="disabled")
+        elif self.__query_choice.get() == "File Action":
+            self.__action_menu_lable.config(state="normal")
+            self.__action_menu.config(state="normal")
+            self.__file_type_label.config(state="disabled")
+            self.__file_type_entry.config(state="disabled")
+            self.__file_directory_label.config(state="disabled")
+            self.__file_directory_entry.config(state="disabled")
+            self.__start_time_entry_lable.config(state="disabled")
+            self.__start_time_entry.config(state="disabled")
+            self.__end_time_entry_label.config(state="disabled")
+            self.__end_time_entry.config(state="disabled")
+        elif self.__query_choice.get() == "File Directory":
+            self.__action_menu_lable.config(state="disabled")
+            self.__action_menu.config(state="disabled")
+            self.__file_type_label.config(state="disabled")
+            self.__file_type_entry.config(state="disabled")
+            self.__file_directory_label.config(state="enabled")
+            self.__file_directory_entry.config(state="enabled")
+            self.__start_time_entry_lable.config(state="disabled")
+            self.__start_time_entry.config(state="disabled")
+            self.__end_time_entry_label.config(state="disabled")
+            self.__end_time_entry.config(state="disabled")
+        elif self.__query_choice.get() == "Action Time":
+            self.__action_menu_lable.config(state="disabled")
+            self.__action_menu.config(state="disabled")
+            self.__file_type_label.config(state="disabled")
+            self.__file_type_entry.config(state="disabled")
+            self.__file_directory_label.config(state="disabled")
+            self.__file_directory_entry.config(state="disabled")
+            self.__start_time_entry_lable.config(state="enabled")
+            self.__start_time_entry.config(state="enabled")
+            self.__end_time_entry_label.config(state="enabled")
+            self.__end_time_entry.config(state="enabled")
 
 
-class TableFrame(ttk.Frame):
+class QueryResultFrame(ttk.Frame):
     """
     A class used to represent a TableFrame which inherits from ttk.Frame and
     contains a table made out of tree widgets.
