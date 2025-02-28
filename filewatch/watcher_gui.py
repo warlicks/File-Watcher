@@ -1,12 +1,10 @@
 import tkinter as tk
-from tkinter import W, E, N, S, StringVar, Toplevel, ttk, filedialog
-from tokenize import String
-from typing import Union, Callable
+from tkinter import W, E, StringVar, ttk, filedialog
 
 
 class WatcherGUI(tk.Tk):
 
-    def __init__(self, controller=None):
+    def __init__(self):
         """_summary_
 
         _extended_summary_
@@ -115,7 +113,17 @@ class DirectorySelection(ttk.Frame):
 
 
 class ActionFrame(ttk.Frame):
+    """Class For Managing Frame with buttons to start and stop watching a directory.
+    Inherits from ttk.Frame
+    """
+
     def __init__(self, parent):
+        """Initializes the ActionFrame with buttons to start and stop watching a directory.
+
+
+        Args:
+            parent: Parent Tkinter object
+        """
         super().__init__(parent)
         self.start_button = ActionButton(self, "Start Watching")
         self.start_button.pack(side=tk.LEFT, padx=5)
@@ -129,10 +137,23 @@ class ActionButton(tk.Button):
 
 
 class QueryWindow(ttk.Frame):
+    """Class for managing the Query Frame
+
+    Manages the query frame which allows the user to make a query of the database and
+    displays the results.
+    """
+
     def __init__(
         self,
         parent,
     ):
+        """Initializes an instance of the QueryWindow class
+        Manages the query frame which allows the user to make a query of the database and
+        displays the results.
+
+        Args:
+            parent: parent Tkinter object.
+        """
         super().__init__(parent)
 
         self.__query_frame = QueryFrame(self)
@@ -156,10 +177,23 @@ class QueryWindow(ttk.Frame):
 
 
 class QueryFrame(ttk.Frame):
+    """Class for managing frame for query options.
+
+    Inherits from ttk.Frame
+    """
+
     def __init__(
         self,
         parent,
     ):
+        """Initializes an instance of the QueryFrame class.
+
+        Manages the frame and widgets that allow the user to select how they want to
+        query the database and the specify the query criteria based on that choice.
+
+        Args:
+            parent: The parent Tkinter object.
+        """
         super().__init__(parent, padding=(10, 10, 10, 10))
 
         menu_vals = [
