@@ -13,7 +13,7 @@ class ViewManager:
         # defining the button in the viewer layer.
         self.__view.start_button.configure(command=self.send_start_watching)
         self.__view.stop_button.configure(command=self.send_stop_watching)
-        self.__view.search_function = self.start_database_search
+        self.__view.search_button.configure(command=self.start_database_search)
 
     def send_start_watching(self):
         """Manages starting the file watcher.
@@ -42,24 +42,22 @@ class ViewManager:
     def start_database_search(self):
         """Handles DB search requests"""
         query_type = self.__view.query_choice.get()
-        query_value = self.__view.query_string.get()
+        query_value = self.__view.file_extension.get()
 
         if query_type == "File Type":
-            result =  self.search_by_extension(query_value)
+            print("Searching by file type")
+            result = self.search_by_extension(query_value)
         elif query_type == "File Action":
+            print("Search By File Action")
             result = self.search_by_action(query_value)
         elif query_type == "File Directory":
+            print("Search By File Directory")
             result = self.search_by_directory(query_value)
-        else:
-            result = "Invalid Query Type"
+        elif query_type == "Action Time":
+            print("Search By Event Time")
 
-        #For UI
-        self.__view.query_result.set(result)
-        print(f"Search Query: {query_type} -> {query_value} | Result: {result}")
-        # print(
-        #     f"Started Database Query by {self.__view.query_choice.get()}, {self.__view.query_string.get()}"
-        # )
-        # self.__view.query_result.set("Fake Result")
+        for row in result:
+            self._view.insert_rows(row)
 
     def execute_query(self, query: str, params: tuple) -> str:
         """Helper method that runs DB queries and returns results as a formatted string"""
@@ -73,21 +71,22 @@ class ViewManager:
             if not results:
                 return "No results found."
 
-            #return "\n".join([", ".join(map(str, row)) for row in results])
+            # return "\n".join([", ".join(map(str, row)) for row in results])
 
         except sqlite3.Error as e:
             return f"Database error: {str(e)}"
 
-
     def search_by_extension(self, extension: str) -> str:
         """Search for files with a given extension."""
         query = "SELECT filename,  directory, action, timestamp FROM file_event WHERE filename LIKE ?"
-        params = (f'%.{extension}',)
+        params = (f"%.{extension}",)
         return self.execute_query(query, params)
 
     def search_by_action(self, action: str) -> str:
         """Search for files by action (created, modified, etc.)."""
-        query = "SELECT filename, directory, timestamp FROM file_events WHERE action = ?"
+        query = (
+            "SELECT filename, directory, timestamp FROM file_events WHERE action = ?"
+        )
         params = (action,)
         return self.execute_query(query, params)
 
