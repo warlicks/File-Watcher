@@ -48,16 +48,25 @@ class FileWatcherDatabase:
 
     def __insert_data_sql(self):
         """Inserts a new record into the file_events table """
+        return """
+        INSERT INTO file_events (event_id, event_time, event_type, event_location, file_type, move_destination
+        VALUES (?, ?, ?, ?, ?, ?
+        """
+    def insert_data(self, event_id, event_time, event_type, event_location, file_type, move_destination):
+        """Executes SQL insertion with values provided"""
         if self.__conn is None:
-            print('Error: Database connection is not established')
+            print('Error: Database connection not created')
             return
 
         try:
             c = self.__conn.cursor()
-            c.execute(self.__insert_data_sql(), (event_id, event_time, event_type, event_location, file_type, move_destinatino))
-            self.__conn.commit()
+            sql_query = self.__insert_data_sql()
+            c.execute(sql_query, (event_id, event_time, event_type, event_location, file_type, move_destination))
+            self.__conn..commit()
+            print('Data inserted successfully')
+
         except sqlite3.Error as e:
-            print(f'Database error:{e}')
+            print(f"Database error: {e}")
 
     def query_by_file_extension(self, ext_param: str):
         """Queries the database by file type.
@@ -67,9 +76,10 @@ class FileWatcherDatabase:
             ext_param (str): The file extension of interest.
         """
         c = self.__conn.cursor()
-        c.execute(self.__file_extension_query(), (ext_param))
+        c.execute(self.__file_extension_query(), (ext_param,))
 
         rows = c.fetchall()
+
         # TODO: replace this place holder with how we actually display this data.
         for row in rows:
             print(row)
