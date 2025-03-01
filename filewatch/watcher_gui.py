@@ -9,7 +9,7 @@ class WatcherGUI(tk.Tk):
         super().__init__()
 
         self.title("File Watcher")
-        self.geometry("600x400")
+        self.geometry("800x600")
 
         self.directory_selection_frame = DirectorySelection(self)
         self.directory_selection_frame.pack(pady=10)
@@ -17,6 +17,20 @@ class WatcherGUI(tk.Tk):
 
         self.frame_controls = ActionFrame(self)
         self.frame_controls.pack(pady=5)
+
+        #window for file-watching logs
+        self.log_frame = tk.Frame(self)
+        self.log_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+        tk.Label(self.log_frame, text="Log Panel:").pack(anchor=tk.W)
+        self.log_text = tk.Text(self.log_frame, height=10)
+        self.log_text.pack(fill=tk.BOTH, expand=True)
+
+        #window for query search results
+        self.query_result_frame = tk.Frame(self)
+        self.query_result_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+        tk.Label(self.query_result_frame, text="Search Result:").pack(anchor=tk.W)
+        self.query_result_text = tk.Text(self.query_result_frame, height=10)
+        self.query_result_text.pack(fill=tk.BOTH, expand=True)
 
         # Create attributes for the start & stop buttons.
         # TODO: Refactor so the properties return these. We don't need to return @ this level to make them available to the ViewMangaer.
