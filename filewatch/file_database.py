@@ -73,7 +73,7 @@ class FileWatcherDatabase:
         """
 
         if self.__conn is None:
-            print("Error: Database connection is not established")
+            print("Error: Database connection not created")
             return
 
         try:
@@ -84,7 +84,7 @@ class FileWatcherDatabase:
             )
             self.__conn.commit()
         except sqlite3.Error as e:
-            print(f"Database error:{e}")
+            print(f"Database error: {e}")
 
     def query_by_file_extension(self, ext_param: str) -> list:
         """Queries the database by file type.
@@ -93,7 +93,7 @@ class FileWatcherDatabase:
             ext_param (str): The file extension of interest.
         """
         c = self.__conn.cursor()
-        c.execute(self.__file_extension_query(), (ext_param))
+        c.execute(self.__file_extension_query(), (ext_param,))
 
         rows = c.fetchall()
         return rows
