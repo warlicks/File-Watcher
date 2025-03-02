@@ -1,5 +1,7 @@
 from .watcher import FileWatcher
+from .file_database import FileWatcherDatabase
 from .watcher_gui import WatcherGUI
+import datetime as dt
 
 
 class ViewManager:
@@ -7,7 +9,11 @@ class ViewManager:
         self.__watcher = model
         self.__view = view
         self.__watcher.handler.register_observers(self)
-        # self.__database_tools = FileWatcherDatabase()
+
+        # Set up the database connection.
+        self.__db = FileWatcherDatabase()
+        self.__db.create_database_connection()
+        self.__db.create_table()
 
         # the configure method lets us set the action via the controller layer after
         # defining the button in the viewer layer.
@@ -46,18 +52,31 @@ class ViewManager:
 
         if query_type == "File Type":
             print("Searching by file type")
-            result = self.search_by_extension(query_value)
+            result = self.__db.query_by_file_extension(self.__view.file_extension.get())
         elif query_type == "File Action":
             print("Search By File Action")
-            result = self.search_by_action(query_value)
+            result = self.__db.query_by_event_type(
+                self.__view.query_action_type.get().lower()
+            )
         elif query_type == "File Directory":
             print("Search By File Directory")
-            result = self.search_by_directory(query_value)
+            result = self.__db.query_by_event_location(
+                self.__view.query_directory_string.get()
+            )
         elif query_type == "Action Time":
-            print("Search By Event Time")
+            ts_format = "%Y-%m-%d %H:%M:%S"
+            start_time_epoch = dt.datetime.strptime(
+                self.__view.start_time_string.get(), ts_format
+            ).timestamp()
+            end_time_epoch = dt.datetime.strptime(
+                self.__view.end_time_string.get(), ts_format
+            ).timestamp()
+            result = self.__db.query_by_event_date(start_time_epoch, end_time_epoch)
 
         for row in result:
-            self._view.insert_rows(row)
+            self.__view.insert_query_result(
+                (row[0], row[1], dt.datetime.fromtimestamp(row[2]), row[3], row[4])
+            )
 
     def execute_query(self, query: str, params: tuple) -> str:
         """Helper method that runs DB queries and returns results as a formatted string"""

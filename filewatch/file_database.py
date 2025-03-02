@@ -104,8 +104,14 @@ class FileWatcherDatabase:
         Args:
             event_type (str): The event type of interest.
         """
-        c = self.__conn.cursor()
-        c.execute(self.__event_type_query(), (event_type))
+        if self.__conn is None:
+            self.__conn = sqlite3.connect(self.__database_location)
+
+        try:
+            c = self.__conn.cursor()
+            c.execute(self.__event_type_query(), (event_type,))
+        except sqlite3.Error as e:
+            print(f"Database error: {e}")
 
         rows = c.fetchall()
 
@@ -117,14 +123,17 @@ class FileWatcherDatabase:
         Args:
             event_location (str): The event location of interest.
         """
+        if self.__conn is None:
+            self.__conn = sqlite3.connect(self.__database_location)
+
         c = self.__conn.cursor()
-        c.execute(self.__event_location_query(), (f"{event_location}%"))
+        c.execute(self.__event_location_query(), (f"{event_location}%",))
 
         rows = c.fetchall()
 
         return rows
 
-    def query_by_event_date(self, start_time: int, end_time: int) -> list:
+    def query_by_event_date(self, start_time: float, end_time: float) -> list:
         """Queries the database by event date.
 
         Args:
@@ -133,8 +142,16 @@ class FileWatcherDatabase:
             end_time (int): The end time of interest. Should be in integer form
                 (e.g., epoch time).
         """
+        if self.__conn is None:
+            self.__conn = sqlite3.connect(self.__database_location)
         c = self.__conn.cursor()
-        c.execute(self.__event_date_query(), (start_time, end_time))
+        c.execute(
+            self.__event_date_query(),
+            (
+                start_time,
+                end_time,
+            ),
+        )
 
         rows = c.fetchall()
 
@@ -175,14 +192,13 @@ class FileWatcherDatabase:
 
     def __file_extension_query(self) -> str:
         """returns SQL query for selecting by file extension"""
-        return """
-        
+        sql = """
         SELECT
-            event_time,
-            event_type,
             event_location,
+            event_type,
+            event_time,
             file_type,
-            move destination
+            move_destination
 
         FROM  file_events
 
@@ -190,16 +206,17 @@ class FileWatcherDatabase:
             file_type = ?
 
         """
+        return sql
 
     def __event_type_query(self) -> str:
         """returns SQL query for selecting by action type"""
         sql = """
         SELECT
-            event_time,
-            event_type,
             event_location,
+            event_type,
+            event_time,
             file_type,
-            move destination
+            move_destination
 
         FROM  file_events
 
@@ -214,11 +231,11 @@ class FileWatcherDatabase:
         sql = """
         
         SELECT
-            event_time,
-            event_type,
             event_location,
+            event_type,
+            event_time,
             file_type,
-            move destination
+            move_destination
 
         FROM  file_events
 
@@ -232,11 +249,11 @@ class FileWatcherDatabase:
         sql = """
         
         SELECT
-            event_time,
-            event_type,
             event_location,
+            event_type,
+            event_time,
             file_type,
-            move destination
+            move_destination
 
         FROM  file_events
 

@@ -163,7 +163,7 @@ class QueryWindow(ttk.Frame):
         ttk.Label(self, text="Query Results").pack(anchor=W, padx=5, pady=5)
 
         self.__query_result_frame = QueryResultFrame(
-            self, columns=["File", "Action", "Time"]
+            self, columns=["File", "Action", "Time", "File Type", "Move Destination"]
         )
         self.__query_result_frame.pack(fill=tk.BOTH, expand=True)
 
