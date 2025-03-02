@@ -71,11 +71,8 @@ class FileWatcherDatabase:
         Raises:
             sqlite3.Error: If there is an error with the database operation.
         """
-
         if self.__conn is None:
-            print("Error: Database connection not created")
-            return
-
+            self.__conn = sqlite3.connect(self.__database_location)
         try:
             c = self.__conn.cursor()
             c.execute(
@@ -92,6 +89,9 @@ class FileWatcherDatabase:
         Args:
             ext_param (str): The file extension of interest.
         """
+        if self.__conn is None:
+            self.__conn = sqlite3.connect(self.__database_location)
+
         c = self.__conn.cursor()
         c.execute(self.__file_extension_query(), (ext_param,))
 
@@ -168,7 +168,7 @@ class FileWatcherDatabase:
             event_type,
             event_location,
             file_type,
-            move destination
+            move_destination
         )
         VALUES (?, ?, ?, ?, ?)
         """
