@@ -1,7 +1,11 @@
-from .watcher import FileWatcher
-from .file_database import FileWatcherDatabase
-from .watcher_gui import WatcherGUI
+import csv
 import datetime as dt
+import os
+
+from .email_client import ReportEmail as email
+from .file_database import FileWatcherDatabase
+from .watcher import FileWatcher
+from .watcher_gui import WatcherGUI
 
 
 class ViewManager:
@@ -20,6 +24,8 @@ class ViewManager:
         self.__view.start_button.configure(command=self.send_start_watching)
         self.__view.stop_button.configure(command=self.send_stop_watching)
         self.__view.search_button.configure(command=self.start_database_search)
+
+        self.__view.send_report_cmd = self.generate_report
 
     def send_start_watching(self):
         """Manages starting the file watcher.
@@ -73,6 +79,7 @@ class ViewManager:
             ).timestamp()
             result = self.__db.query_by_event_date(start_time_epoch, end_time_epoch)
 
+        self.__current_results = result
         for row in result:
             self.__view.insert_query_result(
                 (row[0], row[1], dt.datetime.fromtimestamp(row[2]), row[3], row[4])
@@ -83,3 +90,34 @@ class ViewManager:
         # Needs to pass the events to the GUI's log window.
         # Needs to insert the data into the database.
         pass
+
+    def generate_report(self):
+        subject = "File Activity Report"
+        body = "The requested file activity report is attached."
+        report_location = self._write_report(
+            self.__current_results, self.__view.report_file_name.get()
+        )
+        email.email_report(
+            self.__view.email_sender.get(),
+            self.__view.email_password.get(),
+            self.__view.email_recipients.get(),
+            subject,
+            body,
+            attachment=report_location,
+        )
+
+        if not self.__view.keep_report.get():
+            os.remove(self.__view.report_file_name.get())
+
+    def _write_report(
+        self, results: list, result_file: str = "./file_activity_report.csv"
+    ) -> str:
+
+        header = ["File", "Action", "Time", "File Type", "Move Destination"]
+        report_name = result_file
+        with open(report_name, "w", newline="") as csvfile:
+            writer = csv.writer(csvfile)
+            writer.writerow(header)
+            writer.writerows(results)
+
+        return report_name
