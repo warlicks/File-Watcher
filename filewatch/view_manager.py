@@ -1,5 +1,7 @@
+import csv
 from .watcher import FileWatcher
 from .watcher_gui import WatcherGUI
+from .email_cilent import ReportEmail as email
 
 
 class ViewManager:
@@ -45,7 +47,7 @@ class ViewManager:
         query_value = self.__view.query_string.get()
 
         if query_type == "File Type":
-            result =  self.search_by_extension(query_value)
+            result = self.search_by_extension(query_value)
         elif query_type == "File Action":
             result = self.search_by_action(query_value)
         elif query_type == "File Directory":
@@ -53,7 +55,7 @@ class ViewManager:
         else:
             result = "Invalid Query Type"
 
-        #For UI
+        # For UI
         self.__view.query_result.set(result)
         print(f"Search Query: {query_type} -> {query_value} | Result: {result}")
         # print(
@@ -73,21 +75,22 @@ class ViewManager:
             if not results:
                 return "No results found."
 
-            #return "\n".join([", ".join(map(str, row)) for row in results])
+            # return "\n".join([", ".join(map(str, row)) for row in results])
 
         except sqlite3.Error as e:
             return f"Database error: {str(e)}"
 
-
     def search_by_extension(self, extension: str) -> str:
         """Search for files with a given extension."""
         query = "SELECT filename,  directory, action, timestamp FROM file_event WHERE filename LIKE ?"
-        params = (f'%.{extension}',)
+        params = (f"%.{extension}",)
         return self.execute_query(query, params)
 
     def search_by_action(self, action: str) -> str:
         """Search for files by action (created, modified, etc.)."""
-        query = "SELECT filename, directory, timestamp FROM file_events WHERE action = ?"
+        query = (
+            "SELECT filename, directory, timestamp FROM file_events WHERE action = ?"
+        )
         params = (action,)
         return self.execute_query(query, params)
 
@@ -102,3 +105,18 @@ class ViewManager:
         # Needs to pass the events to the GUI's log window.
         # Needs to insert the data into the database.
         pass
+
+    def generate_report(self):
+        subject = "File Activity Report"
+        body = "The requested file activity report is attached."
+        pass
+        # email.email_report()
+
+    def _write_report(self, results: list) -> None:
+
+        header = ["File", "Action", "Time", "File Type", "Move Destination"]
+        report_name = "file_activity_report.csv"
+        with open(report_name, "w", newline="") as csvfile:
+            writer = csv.writer(csvfile)
+            writer.writerow(header)
+            writer.writerows(results)
