@@ -15,7 +15,9 @@ class WatcherGUI(tk.Tk):
         super().__init__()
 
         self.title("File Watcher")
-        self.geometry("1000x800")
+
+        self.geometry("800x600")
+
 
         self.directory_selection_frame = DirectorySelection(self)
         self.directory_selection_frame.pack(
@@ -24,7 +26,30 @@ class WatcherGUI(tk.Tk):
         self.__dir_to_watch = self.directory_selection_frame.selected_directory
 
         self.frame_controls = ActionFrame(self)
-        self.frame_controls.pack(pady=5, padx=5)  # , side=tk.LEFT)
+
+
+#         self.frame_controls = ActionFrame(self, self.start_watching, self.stop_watching)
+        self.frame_controls.pack(pady=5)
+
+        self.status_label = tk.Label(self, text="Status: Idle", fg="blue")
+        self.status_label.pack(pady=5)
+
+        self.__start_button = self.frame_controls.start_button
+        self.__stop_button = self.frame_controls.stop_button
+
+        #window for file-watching logs
+        self.log_frame = tk.Frame(self)
+        self.log_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+        tk.Label(self.log_frame, text="Log Panel:").pack(anchor=tk.W)
+        self.log_text = tk.Text(self.log_frame, height=10)
+        self.log_text.pack(fill=tk.BOTH, expand=True)
+
+        #window for query search results
+        self.query_result_frame = tk.Frame(self)
+        self.query_result_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+        tk.Label(self.query_result_frame, text="Search Result:").pack(anchor=tk.W)
+        self.query_result_text = tk.Text(self.query_result_frame, height=10)
+        self.query_result_text.pack(fill=tk.BOTH, expand=True)
 
         self.__query_frame = QueryWindow(self)
         self.__query_frame.pack(
@@ -39,6 +64,7 @@ class WatcherGUI(tk.Tk):
     @property
     def stop_button(self):
         return self.frame_controls.end_button
+
 
     @property
     def dir_to_watch(self) -> str:
@@ -76,6 +102,21 @@ class WatcherGUI(tk.Tk):
     def insert_query_result(self):
         return self.__query_frame.query_result_frame.insert_row
 
+    def start_watching(self):
+        print("Status: Watching", "green")
+        self.update_status("Watching files for changes...", "green")
+
+    def stop_watching(self):
+        print("Status: Stopped", "red")
+        self.update_status("Stopped watching files...", "red")
+
+    def update_status(self, message: str, color: str):
+        """Updates status label with message and text color"""
+        if hasattr(self, "status_label"): #chec if exists
+            self.status_label.config(text=message, fg=color)
+            self.update()
+        else:
+            print(f"Status update failed: {message} ({color})")
 
 class DirectorySelection(ttk.Frame):
     """Class For Managing ttk Frame that allow you to select a directory.
@@ -124,11 +165,17 @@ class ActionFrame(ttk.Frame):
         Args:
             parent: Parent Tkinter object
         """
+
+    #def __init__(self, parent, start_callback, stop_callback):
+
         super().__init__(parent)
         self.start_button = ActionButton(self, "Start Watching")
         self.start_button.pack(side=tk.LEFT, padx=5)
-        self.end_button = ActionButton(self, "Stop Watching")
-        self.end_button.pack(side=tk.LEFT, padx=5)
+#         self.start_button.configure(command=start_callback)
+
+        self.stop_button = ActionButton(self, "Stop Watching")
+        self.stop_button.pack(side=tk.LEFT, padx=5)
+#         self.stop_button.configure(command=stop_callback)
 
 
 class ActionButton(tk.Button):
