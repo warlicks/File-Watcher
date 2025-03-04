@@ -36,11 +36,12 @@ class ViewManager:
         gets attached to the GUI's start button. When the button is pressed it calls
         the watcher's start_watching method.
         """
-        print("send_start_watching() called") #for debugging, remove later
+        print("send_start_watching() called")  # for debugging, remove later
         print(f"Watching {self.__view.dir_to_watch}")
-        self.__watcher.start_watching(self.__view.dir_to_watch)
-        self.__view.update_status("Status: Watching", "green")  # ✅ UI Update
 
+        self.__watcher.start_watching(self.__view.dir_to_watch)
+        self.__view.status_label_text.set(f"Watching {self.__view.dir_to_watch}")
+        self.__view.status_label.configure(foreground="green")  # ✅ UI Update
 
     def send_stop_watching(self):
         """Passes press of the Stop Watching button to the file watcher. .
@@ -49,11 +50,11 @@ class ViewManager:
         gets attached to the GUI's stop button. When the button is pressed it calls
         the watcher's stop_watching method.
         """
-        print("send_stop_watching() called") #for debug, remove later
+        print("send_stop_watching() called")  # for debug, remove later
         print(f"Stopped Watching {self.__view.dir_to_watch}")
         self.__watcher.stop_watching()
-        self.__view.update_status("Status: Stopped", "red")  # ✅ UI Update
-
+        self.__view.status_label_text.set("Status: Stopped")
+        self.__view.status_label.configure(foreground="red")  # ✅ UI Update
 
     def start_database_search(self):
         """Handles DB search requests"""
@@ -63,16 +64,19 @@ class ViewManager:
         if query_type == "File Type":
             print("Searching by file type")
             result = self.__db.query_by_file_extension(self.__view.file_extension.get())
+
         elif query_type == "File Action":
             print("Search By File Action")
             result = self.__db.query_by_event_type(
                 self.__view.query_action_type.get().lower()
             )
+
         elif query_type == "File Directory":
             print("Search By File Directory")
             result = self.__db.query_by_event_location(
                 self.__view.query_directory_string.get()
             )
+
         elif query_type == "Action Time":
             ts_format = "%Y-%m-%d %H:%M:%S"
             start_time_epoch = dt.datetime.strptime(
@@ -99,13 +103,17 @@ class ViewManager:
             directory (str): Directory where event occurred
             timestamp (float): Timestamp of when event occured
 
-            """
+        """
         timestamp_int = int(timestamp)
 
-        #human readable format
-        timestamp_human = datetime.datetime.fromtimestamp(timestamp_int).strftime('%Y-%m-%d %H:%M:%S')
+        # human readable format
+        timestamp_human = datetime.datetime.fromtimestamp(timestamp_int).strftime(
+            "%Y-%m-%d %H:%M:%S"
+        )
 
-        log_message = f"{timestamp_human} - {event_type.upper()} - {filename} in {directory}"
+        log_message = (
+            f"{timestamp_human} - {event_type.upper()} - {filename} in {directory}"
+        )
         self.__view.update_log(log_message)
 
         try:
@@ -120,7 +128,6 @@ class ViewManager:
             error_message = f"Database error: {str(e)}"
             self.__view.update_log(error_message)
             print(error_message)
-
 
     def generate_report(self):
         subject = "File Activity Report"
