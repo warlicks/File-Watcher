@@ -15,8 +15,15 @@ class WatcherGUI(tk.Tk):
         self.directory_selection_frame.pack(pady=10)
         self.__dir_to_watch = self.directory_selection_frame.selected_directory
 
-        self.frame_controls = ActionFrame(self)
+
+        self.frame_controls = ActionFrame(self, self.start_watching, self.stop_watching)
         self.frame_controls.pack(pady=5)
+
+        self.status_label = tk.Label(self, text="Status: Idle", fg="blue")
+        self.status_label.pack(pady=5)
+
+        # self.__start_button = self.frame_controls.start_button
+        # self.__stop_button = self.frame_controls.stop_button
 
         #window for file-watching logs
         self.log_frame = tk.Frame(self)
@@ -32,11 +39,6 @@ class WatcherGUI(tk.Tk):
         self.query_result_text = tk.Text(self.query_result_frame, height=10)
         self.query_result_text.pack(fill=tk.BOTH, expand=True)
 
-        # Create attributes for the start & stop buttons.
-        # TODO: Refactor so the properties return these. We don't need to return @ this level to make them available to the ViewMangaer.
-        self.__start_button = self.frame_controls.start_button
-        self.__stop_button = self.frame_controls.end_button
-
         # Setup a button to open the query history window.
         self.new_window_button = ActionButton(self, "Query Change History")
         self.new_window_button.pack()
@@ -50,13 +52,6 @@ class WatcherGUI(tk.Tk):
         # We'll pass the search function "down" to the new window. Set via ViewManager.
         self.__search_function: Union[None | Callable] = None
 
-    @property
-    def start_button(self):
-        return self.__start_button
-
-    @property
-    def stop_button(self):
-        return self.__stop_button
 
     @property
     def dir_to_watch(self) -> str:
@@ -92,6 +87,21 @@ class WatcherGUI(tk.Tk):
             query_results=self.query_result,
         )
 
+    def start_watching(self):
+        print("Status: Watching", "green")
+        self.update_status("Watching files for changes...", "green")
+
+    def stop_watching(self):
+        print("Status: Stopped", "red")
+        self.update_status("Stopped watching files...", "red")
+
+    def update_status(self, message: str, color: str):
+        """Updates status label with message and text color"""
+        if hasattr(self, "status_label"): #chec if exists
+            self.status_label.config(text=message, fg=color)
+            self.update()
+        else:
+            print(f"Status update failed: {message} ({color})")
 
 class DirectorySelection(ttk.Frame):
     """Class For Managing ttk Frame that allow you to select a directory.
@@ -129,12 +139,15 @@ class DirectorySelection(ttk.Frame):
 
 
 class ActionFrame(ttk.Frame):
-    def __init__(self, parent):
+    def __init__(self, parent, start_callback, stop_callback):
         super().__init__(parent)
         self.start_button = ActionButton(self, "Start Watching")
         self.start_button.pack(side=tk.LEFT, padx=5)
-        self.end_button = ActionButton(self, "Stop Watching")
-        self.end_button.pack(side=tk.LEFT, padx=5)
+        self.start_button.configure(command=start_callback)
+
+        self.stop_button = ActionButton(self, "Stop Watching")
+        self.stop_button.pack(side=tk.LEFT, padx=5)
+        self.stop_button.configure(command=stop_callback)
 
 
 class ActionButton(tk.Button):
