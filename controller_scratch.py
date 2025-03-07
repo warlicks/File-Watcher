@@ -10,7 +10,7 @@ from filewatch.file_watch import FileHandler
 from filewatch.watcher import FileWatcher
 
 gui = WatcherGUI()
-watch = FileWatcher(FileHandler())
-controller = ViewManager(watch, gui)
+handler = FileHandler()
+controller = ViewManager(handler, gui)
 
 gui.mainloop()
