@@ -1,8 +1,7 @@
 import tkinter as tk
-from tkinter import W, E, BooleanVar, StringVar, Toplevel, ttk, filedialog
 from typing import Callable
-from file_change_frame import WatcherFrame
-from query_frame import QueryWindow, ActionButton
+from .file_change_frame import WatcherFrame
+from .query_frame import QueryWindow
 
 
 class WatcherGUI(tk.Tk):
@@ -18,17 +17,14 @@ class WatcherGUI(tk.Tk):
         super().__init__()
 
         self.title("File Watcher")
-
-        self.geometry("800x600")
+        self.geometry("1000x800")
 
         self.__file_watch_frame = WatcherFrame(self)
-        self.__file_watch_frame.pack()
+        self.__file_watch_frame.pack(padx=5, pady=5)
 
         # window for query search results
         self.__query_frame = QueryWindow(self)
-        self.__query_frame.pack(
-            pady=5,
-        )  # anchor=E, side=tk.RIGHT)
+        self.__query_frame.pack(padx=5, pady=5, ipadx=5, ipady=5)
 
     # Define properties for things we need to pass to the Controller.
     @property
@@ -110,30 +106,6 @@ class WatcherGUI(tk.Tk):
     @send_report_cmd.setter
     def send_report_cmd(self, value: Callable):
         self.__query_frame.query_frame.send_report_cmd = value
-
-
-class ActionFrame(ttk.Frame):
-    """Class For Managing Frame with buttons to start and stop watching a directory.
-    Inherits from ttk.Frame
-    """
-
-    def __init__(self, parent):
-        """Initializes the ActionFrame with buttons to start and stop watching a directory.
-
-
-        Args:
-            parent: Parent Tkinter object
-        """
-
-        # def __init__(self, parent, start_callback, stop_callback):
-
-        super().__init__(parent)
-        self.start_button = ActionButton(self, "Start Watching")
-        self.start_button.pack(side=tk.LEFT, padx=5)
-        #         self.start_button.configure(command=start_callback)
-
-        self.stop_button = ActionButton(self, "Stop Watching")
-        self.stop_button.pack(side=tk.LEFT, padx=5)
 
 
 if __name__ == "__main__":
