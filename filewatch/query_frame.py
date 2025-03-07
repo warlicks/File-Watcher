@@ -8,7 +8,7 @@ class ActionButton(tk.Button):
         super().__init__(parent, text=text)
 
 
-class QueryWindow(ttk.Frame):
+class QueryWindow(ttk.Labelframe):
     """Class for managing the Query Window
 
     Manages the query frame which allows the user to make a query of the database and
@@ -26,7 +26,13 @@ class QueryWindow(ttk.Frame):
         Args:
             parent: parent Tkinter object.
         """
-        super().__init__(parent)
+        super().__init__(
+            parent,
+            text="Query File Change History",
+            labelanchor="n",
+            borderwidth=10,
+            padding=(5, 5, 5, 5),
+        )
 
         self.__query_frame = QueryFrame(self)
         self.__query_frame.pack()
@@ -38,6 +44,9 @@ class QueryWindow(ttk.Frame):
             self, columns=["File", "Action", "Time", "File Type", "Move Destination"]
         )
         self.__query_result_frame.pack(fill=tk.BOTH, expand=True)
+        self.__query_frame.clear_button.configure(
+            command=self.__query_result_frame.clear_table
+        )
 
     @property
     def query_frame(self):
@@ -66,7 +75,7 @@ class QueryFrame(ttk.Frame):
         Args:
             parent: The parent Tkinter object.
         """
-        super().__init__(parent, padding=(10, 10, 10, 10))
+        super().__init__(parent, padding=(5, 5, 5, 5))
 
         menu_vals = [
             "File Type",
@@ -92,7 +101,7 @@ class QueryFrame(ttk.Frame):
 
         ## Select the overall query approach.
         self.__label_query_option = ttk.Label(self, text="Select Query Option:")
-        self.__label_query_option.grid(row=0, column=1, sticky=W)
+        self.__label_query_option.grid(row=0, column=2, sticky=W)
         self.__menu_wigit = ttk.OptionMenu(
             self,
             self.__query_choice,
@@ -100,7 +109,7 @@ class QueryFrame(ttk.Frame):
             *menu_vals,
             command=lambda x: self.activate_query_optons(),
         )
-        self.__menu_wigit.grid(row=0, column=2, sticky=(W, E))
+        self.__menu_wigit.grid(row=0, column=3, sticky=(W, E))
 
         # Search Options for file type
         self.__file_type_label = ttk.Label(self, text="Enter File Type:")
@@ -149,15 +158,21 @@ class QueryFrame(ttk.Frame):
 
         self.__search_button = ActionButton(self, "Start Search")
         self.__search_button.grid(row=4, column=2, pady=5, sticky=(W, E))
+        self.__clear_button = ActionButton(self, "Clear Results")
+        self.__clear_button.grid(row=4, column=3, pady=5, sticky=(W, E))
         self.__generate_report_button = ActionButton(self, "Generate Report")
         self.__generate_report_button.config(
             command=lambda: self.spawn_report_generation()
         )
-        self.__generate_report_button.grid(row=4, column=3, pady=5, sticky=(W, E))
+        self.__generate_report_button.grid(row=4, column=4, pady=5, sticky=(W, E))
 
     @property
     def search_button(self):
         return self.__search_button
+
+    @property
+    def clear_button(self):
+        return self.__clear_button
 
     @property
     def query_choice(self):
@@ -304,7 +319,7 @@ class QueryResultFrame(ttk.Frame):
         for col in columns:
             self.__tree.heading(col, text=col)
             self.__tree.column(col, anchor=tk.CENTER)
-        self.__tree.pack(fill=tk.BOTH, expand=True)
+        self.__tree.pack(expand=True)
 
     def insert_row(self, values):
         self.__tree.insert("", tk.END, values=values)
