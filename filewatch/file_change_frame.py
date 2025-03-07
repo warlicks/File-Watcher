@@ -1,12 +1,19 @@
 import tkinter as tk
 from tkinter import W, E, BooleanVar, StringVar, Toplevel, ttk, filedialog
+from tkinter import font
+from turtle import bgcolor
 from typing import Callable
-from query_frame import QueryResultFrame, ActionButton
+from .query_frame import QueryResultFrame, ActionButton
 
 
-class WatcherFrame(ttk.Frame):
+class WatcherFrame(ttk.LabelFrame):
     def __init__(self, parent):
-        super().__init__(parent)
+        super().__init__(
+            parent,
+            text="Configure File Watching",
+            labelanchor="n",
+            borderwidth=5,
+        )
 
         self.__directory_selection_frame = DirectorySelection(self)
         self.__directory_selection_frame.pack(pady=10)
