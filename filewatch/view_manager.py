@@ -6,15 +6,16 @@ from .email_client import ReportEmail as email
 from .file_database import FileWatcherDatabase
 from .watcher import FileWatcher
 from .watcher_gui import WatcherGUI
+from .file_watch import FileHandler
 
 from fileinput import filename
 
 
 class ViewManager:
-    def __init__(self, model: FileWatcher, view: WatcherGUI):
-        self.__watcher = model
+    def __init__(self, model: FileHandler, view: WatcherGUI):
+        self.__handler = model
         self.__view = view
-        self.__watcher.handler.register_observers(self)
+        self.__handler.register_observers(self)
 
         # Set up the database connection.
         self.__db = FileWatcherDatabase()
@@ -38,7 +39,7 @@ class ViewManager:
         """
         print("send_start_watching() called")  # for debugging, remove later
         print(f"Watching {self.__view.dir_to_watch}")
-
+        self.__watcher = FileWatcher(self.__handler)
         self.__watcher.start_watching(self.__view.dir_to_watch)
         self.__view.status_label_text.set(f"Watching {self.__view.dir_to_watch}")
         self.__view.status_label.configure(foreground="green")  # ✅ UI Update
