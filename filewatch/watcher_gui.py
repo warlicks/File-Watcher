@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import W, E, BooleanVar, StringVar, Toplevel, ttk, filedialog
 from typing import Callable
+from file_change_frame import WatcherFrame
 from query_frame import QueryWindow, ActionButton
 
 
@@ -20,24 +21,8 @@ class WatcherGUI(tk.Tk):
 
         self.geometry("800x600")
 
-        self.directory_selection_frame = DirectorySelection(self)
-        self.directory_selection_frame.pack(
-            pady=10,
-        )  # side=tk.LEFT)
-        self.__dir_to_watch = self.directory_selection_frame.selected_directory
-
-        self.frame_controls = ActionFrame(self)
-        self.frame_controls.pack(pady=5)
-
-        self.__status_label = StatusLabel(self)
-        self.__status_label.pack(pady=5)
-
-        # window for file-watching logs
-        self.log_frame = tk.Frame(self)
-        self.log_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
-        tk.Label(self.log_frame, text="Log Panel:").pack(anchor=tk.W)
-        self.log_text = tk.Text(self.log_frame, height=10)
-        self.log_text.pack(fill=tk.BOTH, expand=True)
+        self.__file_watch_frame = WatcherFrame(self)
+        self.__file_watch_frame.pack()
 
         # window for query search results
         self.__query_frame = QueryWindow(self)
@@ -48,23 +33,23 @@ class WatcherGUI(tk.Tk):
     # Define properties for things we need to pass to the Controller.
     @property
     def status_label(self):
-        return self.__status_label
+        return self.__file_watch_frame.status_label
 
     @property
     def status_label_text(self):
-        return self.__status_label.status_variable
+        return self.__file_watch_frame.status_label_text
 
     @property
     def start_button(self):
-        return self.frame_controls.start_button
+        return self.__file_watch_frame.start_button
 
     @property
     def stop_button(self):
-        return self.frame_controls.stop_button
+        return self.__file_watch_frame.stop_button
 
     @property
     def dir_to_watch(self) -> str:
-        return self.__dir_to_watch.get()
+        return self.__file_watch_frame.selected_directory.get()
 
     @property
     def search_button(self):
@@ -125,54 +110,6 @@ class WatcherGUI(tk.Tk):
     @send_report_cmd.setter
     def send_report_cmd(self, value: Callable):
         self.__query_frame.query_frame.send_report_cmd = value
-
-
-class StatusLabel(ttk.Label):
-    def __init__(self, parent):
-        super().__init__(parent)
-
-        self.__status_variable = StringVar()
-        self.__status_variable.set("Status: Idle")
-        self.configure(textvariable=self.__status_variable, foreground="blue")
-
-    @property
-    def status_variable(self):
-        return self.__status_variable
-
-
-class DirectorySelection(ttk.Frame):
-    """Class For Managing ttk Frame that allow you to select a directory.
-
-    Inherits from ttk.Frame
-
-    Also capture the selected directory and manages access to the selected directory.
-    """
-
-    def __init__(self, parent):
-        """Creates an instance of a DirectorySelectionFrame
-
-        Args:
-            parent: The parent object where the frame is being added.
-        """
-        super().__init__(parent)
-        self.__selected_directory = tk.StringVar()
-
-        ttk.Label(self, text="Directory:").pack(side=tk.LEFT)
-        self.dir_entry = ttk.Entry(
-            self, width=40, textvariable=self.__selected_directory
-        )
-        self.dir_entry.pack(side=tk.LEFT, padx=5)
-        tk.Button(self, text="Select Directory", command=self.select_directory).pack(
-            side=tk.LEFT
-        )
-
-    @property
-    def selected_directory(self):
-        return self.__selected_directory
-
-    def select_directory(self):
-        directory = filedialog.askdirectory()
-        self.__selected_directory.set(directory)
 
 
 class ActionFrame(ttk.Frame):
