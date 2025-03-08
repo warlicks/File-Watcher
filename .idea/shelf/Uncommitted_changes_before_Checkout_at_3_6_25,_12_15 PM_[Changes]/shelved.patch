@@ -1,0 +1,142 @@
+Index: filewatch/view_manager.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>import csv\nimport datetime as dt\nimport os\n\nfrom .email_client import ReportEmail as email\nfrom .file_database import FileWatcherDatabase\nfrom .watcher import FileWatcher\nfrom .watcher_gui import WatcherGUI\n\nfrom fileinput import filename\n\n\nclass ViewManager:\n    def __init__(self, model: FileWatcher, view: WatcherGUI):\n        self.__watcher = model\n        self.__view = view\n        self.__watcher.handler.register_observers(self)\n\n        # Set up the database connection.\n        self.__db = FileWatcherDatabase()\n        self.__db.create_database_connection()\n        self.__db.create_table()\n\n        # the configure method lets us set the action via the controller layer after\n        # defining the button in the viewer layer.\n        self.__view.start_button.configure(command=self.send_start_watching)\n        self.__view.stop_button.configure(command=self.send_stop_watching)\n        self.__view.search_button.configure(command=self.start_database_search)\n\n        self.__view.send_report_cmd = self.generate_report\n\n    def send_start_watching(self):\n        \"\"\"Manages starting the file watcher.\n\n        The method manages the interactions between the GUI and the watcher. The method\n        gets attached to the GUI's start button. When the button is pressed it calls\n        the watcher's start_watching method.\n        \"\"\"\n        print(\"send_start_watching() called\") #for debugging, remove later\n        print(f\"Watching {self.__view.dir_to_watch}\")\n        self.__watcher.start_watching(self.__view.dir_to_watch)\n        self.__view.update_status(\"Status: Watching\", \"green\")  # ✅ UI Update\n\n\n    def send_stop_watching(self):\n        \"\"\"Passes press of the Stop Watching button to the file watcher. .\n\n        The method manages the interactions between the GUI and the watcher. The method\n        gets attached to the GUI's stop button. When the button is pressed it calls\n        the watcher's stop_watching method.\n        \"\"\"\n        print(\"send_stop_watching() called\") #for debug, remove later\n        print(f\"Stopped Watching {self.__view.dir_to_watch}\")\n        self.__watcher.stop_watching()\n        self.__view.update_status(\"Status: Stopped\", \"red\")  # ✅ UI Update\n\n\n    def start_database_search(self):\n        \"\"\"Handles DB search requests\"\"\"\n        query_type = self.__view.query_choice.get()\n        query_value = self.__view.file_extension.get()\n\n        if query_type == \"File Type\":\n            print(\"Searching by file type\")\n            result = self.__db.query_by_file_extension(self.__view.file_extension.get())\n        elif query_type == \"File Action\":\n            print(\"Search By File Action\")\n            result = self.__db.query_by_event_type(\n                self.__view.query_action_type.get().lower()\n            )\n        elif query_type == \"File Directory\":\n            print(\"Search By File Directory\")\n            result = self.__db.query_by_event_location(\n                self.__view.query_directory_string.get()\n            )\n        elif query_type == \"Action Time\":\n            ts_format = \"%Y-%m-%d %H:%M:%S\"\n            start_time_epoch = dt.datetime.strptime(\n                self.__view.start_time_string.get(), ts_format\n            ).timestamp()\n            end_time_epoch = dt.datetime.strptime(\n                self.__view.end_time_string.get(), ts_format\n            ).timestamp()\n            result = self.__db.query_by_event_date(start_time_epoch, end_time_epoch)\n\n        self.__current_results = result\n        for row in result:\n            self.__view.insert_query_result(\n                (row[0], row[1], dt.datetime.fromtimestamp(row[2]), row[3], row[4])\n            )\n\n    def notify(self):\n        \"\"\"Handles notifications from the FileWatcher by updating GUI log panel w event\n        and inserts event into DB\n\n        Args:\n            event_type (str): Type of event (created, modified, etc.)\n            filename (str): Name of edited file\n            directory (str): Directory where event occurred\n            timestamp (float): Timestamp of when event occured\n\n            \"\"\"\n        timestamp_int = int(timestamp)\n\n        #human readable format\n        timestamp_human = datetime.datetime.fromtimestamp(timestamp_int).strftime('%Y-%m-%d %H:%M:%S')\n\n        log_message = f\"{timestamp_human} - {event_type.upper()} - {filename} in {directory}\"\n        self.__view.update_log(log_message)\n\n        try:\n            conn = sqlite3.connect(\"file_watcher.db\")\n            cursor = conn.cursor()\n            query = \"\"\"INSERT INTO file_events (filename, directory, action, timestamp \n                    VALUES (?, ?, ?, ?)\"\"\"\n            cursor.execute(query, (filename, directory, event_type, timestamp_int))\n            conn.commit()\n            conn.close()\n        except sqlite3.Error as e:\n            error_message = f\"Database error: {str(e)}\"\n            self.__view.update_log(error_message)\n            print(error_message)\n\n\n    def generate_report(self):\n        subject = \"File Activity Report\"\n        body = \"The requested file activity report is attached.\"\n        report_location = self._write_report(\n            self.__current_results, self.__view.report_file_name.get()\n        )\n        email.email_report(\n            self.__view.email_sender.get(),\n            self.__view.email_password.get(),\n            self.__view.email_recipients.get(),\n            subject,\n            body,\n            attachment=report_location,\n        )\n\n        if not self.__view.keep_report.get():\n            os.remove(self.__view.report_file_name.get())\n\n    def _write_report(\n        self, results: list, result_file: str = \"./file_activity_report.csv\"\n    ) -> str:\n\n        header = [\"File\", \"Action\", \"Time\", \"File Type\", \"Move Destination\"]\n        report_name = result_file\n        with open(report_name, \"w\", newline=\"\") as csvfile:\n            writer = csv.writer(csvfile)\n            writer.writerow(header)\n            writer.writerows(results)\n\n        return report_name\n
+===================================================================
+diff --git a/filewatch/view_manager.py b/filewatch/view_manager.py
+--- a/filewatch/view_manager.py	(revision 912155e14466662907bb5fdafec86e6ab32cec8e)
++++ b/filewatch/view_manager.py	(date 1741068452942)
+@@ -39,7 +39,7 @@
+         print("send_start_watching() called") #for debugging, remove later
+         print(f"Watching {self.__view.dir_to_watch}")
+         self.__watcher.start_watching(self.__view.dir_to_watch)
+-        self.__view.update_status("Status: Watching", "green")  # ✅ UI Update
++        self.__view.update_status("Status: Watching", "green")
+ 
+ 
+     def send_stop_watching(self):
+@@ -52,7 +52,7 @@
+         print("send_stop_watching() called") #for debug, remove later
+         print(f"Stopped Watching {self.__view.dir_to_watch}")
+         self.__watcher.stop_watching()
+-        self.__view.update_status("Status: Stopped", "red")  # ✅ UI Update
++        self.__view.update_status("Status: Stopped", "red")
+ 
+ 
+     def start_database_search(self):
+Index: .idea/misc.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+><?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<project version=\"4\">\n  <component name=\"ProjectRootManager\" version=\"2\" project-jdk-name=\"Python 3.12\" project-jdk-type=\"Python SDK\" />\n</project>
+===================================================================
+diff --git a/.idea/misc.xml b/.idea/misc.xml
+--- a/.idea/misc.xml	(revision 912155e14466662907bb5fdafec86e6ab32cec8e)
++++ b/.idea/misc.xml	(date 1741290320710)
+@@ -1,4 +1,7 @@
+ <?xml version="1.0" encoding="UTF-8"?>
+ <project version="4">
++  <component name="Black">
++    <option name="sdkName" value="Python 3.12" />
++  </component>
+   <component name="ProjectRootManager" version="2" project-jdk-name="Python 3.12" project-jdk-type="Python SDK" />
+ </project>
+\ No newline at end of file
+Index: .idea/workspace.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+><?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<project version=\"4\">\n  <component name=\"AutoImportSettings\">\n    <option name=\"autoReloadType\" value=\"SELECTIVE\" />\n  </component>\n  <component name=\"ChangeListManager\">\n    <list default=\"true\" id=\"d7df30eb-0f24-467f-8283-a3b5ee5a43c7\" name=\"Changes\" comment=\"\" />\n    <option name=\"SHOW_DIALOG\" value=\"false\" />\n    <option name=\"HIGHLIGHT_CONFLICTS\" value=\"true\" />\n    <option name=\"HIGHLIGHT_NON_ACTIVE_CHANGELIST\" value=\"false\" />\n    <option name=\"LAST_RESOLUTION\" value=\"IGNORE\" />\n  </component>\n  <component name=\"Git.Settings\">\n    <option name=\"RECENT_BRANCH_BY_REPOSITORY\">\n      <map>\n        <entry key=\"$PROJECT_DIR$\" value=\"database-tools\" />\n      </map>\n    </option>\n    <option name=\"RECENT_GIT_ROOT_PATH\" value=\"$PROJECT_DIR$\" />\n  </component>\n  <component name=\"ProjectColorInfo\"><![CDATA[{\n  \"associatedIndex\": 2\n}]]></component>\n  <component name=\"ProjectId\" id=\"2tgu07aWHm40f7IWwYw5ASnzAer\" />\n  <component name=\"ProjectViewState\">\n    <option name=\"hideEmptyMiddlePackages\" value=\"true\" />\n    <option name=\"showLibraryContents\" value=\"true\" />\n  </component>\n  <component name=\"PropertiesComponent\"><![CDATA[{\n  \"keyToString\": {\n    \"Python.FileWatcherMockup.executor\": \"Run\",\n    \"Python.view_manager.executor\": \"Run\",\n    \"Python.watcher_gui.executor\": \"Run\",\n    \"RunOnceActivity.ShowReadmeOnStart\": \"true\",\n    \"node.js.detected.package.eslint\": \"true\",\n    \"node.js.selected.package.eslint\": \"(autodetect)\",\n    \"node.js.selected.package.tslint\": \"(autodetect)\",\n    \"nodejs_package_manager_path\": \"npm\",\n    \"vue.rearranger.settings.migration\": \"true\"\n  }\n}]]></component>\n  <component name=\"SharedIndexes\">\n    <attachedChunks>\n      <set>\n        <option value=\"bundled-js-predefined-d6986cc7102b-5c90d61e3bab-JavaScript-PY-242.22855.92\" />\n        <option value=\"bundled-python-sdk-b068d85d1acf-399fe30bd8c1-com.jetbrains.pycharm.pro.sharedIndexes.bundled-PY-242.22855.92\" />\n      </set>\n    </attachedChunks>\n  </component>\n  <component name=\"SpellCheckerSettings\" RuntimeDictionaries=\"0\" Folders=\"0\" CustomDictionaries=\"0\" DefaultDictionary=\"application-level\" UseSingleDictionary=\"true\" transferred=\"true\" />\n  <component name=\"TaskManager\">\n    <task active=\"true\" id=\"Default\" summary=\"Default task\">\n      <changelist id=\"d7df30eb-0f24-467f-8283-a3b5ee5a43c7\" name=\"Changes\" comment=\"\" />\n      <created>1740785813643</created>\n      <option name=\"number\" value=\"Default\" />\n      <option name=\"presentableId\" value=\"Default\" />\n      <updated>1740785813643</updated>\n      <workItem from=\"1740785815013\" duration=\"8062000\" />\n    </task>\n    <servers />\n  </component>\n  <component name=\"TypeScriptGeneratedFilesManager\">\n    <option name=\"version\" value=\"3\" />\n  </component>\n  <component name=\"com.intellij.coverage.CoverageDataManagerImpl\">\n    <SUITE FILE_PATH=\"coverage/File_Watcher$FileWatcherMockup.coverage\" NAME=\"FileWatcherMockup Coverage Results\" MODIFIED=\"1740817171290\" SOURCE_PROVIDER=\"com.intellij.coverage.DefaultCoverageFileProvider\" RUNNER=\"coverage.py\" COVERAGE_BY_TEST_ENABLED=\"false\" COVERAGE_TRACING_ENABLED=\"false\" WORKING_DIRECTORY=\"$PROJECT_DIR$/filewatch\" />\n    <SUITE FILE_PATH=\"coverage/File_Watcher$watcher_gui.coverage\" NAME=\"watcher_gui Coverage Results\" MODIFIED=\"1740817003971\" SOURCE_PROVIDER=\"com.intellij.coverage.DefaultCoverageFileProvider\" RUNNER=\"coverage.py\" COVERAGE_BY_TEST_ENABLED=\"false\" COVERAGE_TRACING_ENABLED=\"false\" WORKING_DIRECTORY=\"$PROJECT_DIR$/filewatch\" />\n    <SUITE FILE_PATH=\"coverage/File_Watcher$main.coverage\" NAME=\"main Coverage Results\" MODIFIED=\"1740244702627\" SOURCE_PROVIDER=\"com.intellij.coverage.DefaultCoverageFileProvider\" RUNNER=\"coverage.py\" COVERAGE_BY_TEST_ENABLED=\"false\" COVERAGE_TRACING_ENABLED=\"false\" WORKING_DIRECTORY=\"$PROJECT_DIR$/filewatch\" />\n    <SUITE FILE_PATH=\"coverage/File_Watcher$view_manager.coverage\" NAME=\"view_manager Coverage Results\" MODIFIED=\"1740817145363\" SOURCE_PROVIDER=\"com.intellij.coverage.DefaultCoverageFileProvider\" RUNNER=\"coverage.py\" COVERAGE_BY_TEST_ENABLED=\"false\" COVERAGE_TRACING_ENABLED=\"false\" WORKING_DIRECTORY=\"$PROJECT_DIR$/filewatch\" />\n    <SUITE FILE_PATH=\"coverage/File_Watcher$conftest.coverage\" NAME=\"conftest Coverage Results\" MODIFIED=\"1740125522401\" SOURCE_PROVIDER=\"com.intellij.coverage.DefaultCoverageFileProvider\" RUNNER=\"coverage.py\" COVERAGE_BY_TEST_ENABLED=\"false\" COVERAGE_TRACING_ENABLED=\"false\" WORKING_DIRECTORY=\"$PROJECT_DIR$/tests\" />\n    <SUITE FILE_PATH=\"coverage/File_Watcher$watcher.coverage\" NAME=\"watcher Coverage Results\" MODIFIED=\"1740126138672\" SOURCE_PROVIDER=\"com.intellij.coverage.DefaultCoverageFileProvider\" RUNNER=\"coverage.py\" COVERAGE_BY_TEST_ENABLED=\"false\" COVERAGE_TRACING_ENABLED=\"false\" WORKING_DIRECTORY=\"$PROJECT_DIR$/filewatch\" />\n  </component>\n</project>
+===================================================================
+diff --git a/.idea/workspace.xml b/.idea/workspace.xml
+--- a/.idea/workspace.xml	(revision 912155e14466662907bb5fdafec86e6ab32cec8e)
++++ b/.idea/workspace.xml	(date 1741290320708)
+@@ -10,6 +10,13 @@
+     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+     <option name="LAST_RESOLUTION" value="IGNORE" />
+   </component>
++  <component name="FileTemplateManagerImpl">
++    <option name="RECENT_TEMPLATES">
++      <list>
++        <option value="Python Script" />
++      </list>
++    </option>
++  </component>
+   <component name="Git.Settings">
+     <option name="RECENT_BRANCH_BY_REPOSITORY">
+       <map>
+@@ -18,9 +25,9 @@
+     </option>
+     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+   </component>
+-  <component name="ProjectColorInfo"><![CDATA[{
+-  "associatedIndex": 2
+-}]]></component>
++  <component name="ProjectColorInfo">{
++  &quot;associatedIndex&quot;: 2
++}</component>
+   <component name="ProjectId" id="2tgu07aWHm40f7IWwYw5ASnzAer" />
+   <component name="ProjectViewState">
+     <option name="hideEmptyMiddlePackages" value="true" />
+@@ -29,6 +36,7 @@
+   <component name="PropertiesComponent"><![CDATA[{
+   "keyToString": {
+     "Python.FileWatcherMockup.executor": "Run",
++    "Python.controller_scratch.executor": "Run",
+     "Python.view_manager.executor": "Run",
+     "Python.watcher_gui.executor": "Run",
+     "RunOnceActivity.ShowReadmeOnStart": "true",
+@@ -39,6 +47,36 @@
+     "vue.rearranger.settings.migration": "true"
+   }
+ }]]></component>
++  <component name="RunManager">
++    <configuration name="watcher_gui" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
++      <module name="File-Watcher" />
++      <option name="ENV_FILES" value="" />
++      <option name="INTERPRETER_OPTIONS" value="" />
++      <option name="PARENT_ENVS" value="true" />
++      <envs>
++        <env name="PYTHONUNBUFFERED" value="1" />
++      </envs>
++      <option name="SDK_HOME" value="" />
++      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/filewatch" />
++      <option name="IS_MODULE_SDK" value="true" />
++      <option name="ADD_CONTENT_ROOTS" value="true" />
++      <option name="ADD_SOURCE_ROOTS" value="true" />
++      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
++      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/filewatch/watcher_gui.py" />
++      <option name="PARAMETERS" value="" />
++      <option name="SHOW_COMMAND_LINE" value="false" />
++      <option name="EMULATE_TERMINAL" value="false" />
++      <option name="MODULE_MODE" value="false" />
++      <option name="REDIRECT_INPUT" value="false" />
++      <option name="INPUT_FILE" value="" />
++      <method v="2" />
++    </configuration>
++    <recent_temporary>
++      <list>
++        <item itemvalue="Python.watcher_gui" />
++      </list>
++    </recent_temporary>
++  </component>
+   <component name="SharedIndexes">
+     <attachedChunks>
+       <set>
+@@ -63,11 +101,13 @@
+     <option name="version" value="3" />
+   </component>
+   <component name="com.intellij.coverage.CoverageDataManagerImpl">
+-    <SUITE FILE_PATH="coverage/File_Watcher$FileWatcherMockup.coverage" NAME="FileWatcherMockup Coverage Results" MODIFIED="1740817171290" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/filewatch" />
+-    <SUITE FILE_PATH="coverage/File_Watcher$watcher_gui.coverage" NAME="watcher_gui Coverage Results" MODIFIED="1740817003971" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/filewatch" />
++    <SUITE FILE_PATH="coverage/File_Watcher$FileWatcherMockup.coverage" NAME="FileWatcherMockup Coverage Results" MODIFIED="1740978009925" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/filewatch" />
++    <SUITE FILE_PATH="coverage/File_Watcher$watcher_gui.coverage" NAME="watcher_gui Coverage Results" MODIFIED="1741068456643" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/filewatch" />
+     <SUITE FILE_PATH="coverage/File_Watcher$main.coverage" NAME="main Coverage Results" MODIFIED="1740244702627" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/filewatch" />
+-    <SUITE FILE_PATH="coverage/File_Watcher$view_manager.coverage" NAME="view_manager Coverage Results" MODIFIED="1740817145363" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/filewatch" />
++    <SUITE FILE_PATH="coverage/File_Watcher$view_manager.coverage" NAME="view_manager Coverage Results" MODIFIED="1740977097228" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/filewatch" />
++    <SUITE FILE_PATH="coverage/File_Watcher$controller_scratch.coverage" NAME="controller_scratch Coverage Results" MODIFIED="1741068452955" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
++    <SUITE FILE_PATH="coverage/File_Watcher$.coverage" NAME=" Coverage Results" MODIFIED="1741054249455" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/filewatch" />
+     <SUITE FILE_PATH="coverage/File_Watcher$conftest.coverage" NAME="conftest Coverage Results" MODIFIED="1740125522401" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/tests" />
+-    <SUITE FILE_PATH="coverage/File_Watcher$watcher.coverage" NAME="watcher Coverage Results" MODIFIED="1740126138672" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/filewatch" />
++    <SUITE FILE_PATH="coverage/File_Watcher$watcher.coverage" NAME="watcher Coverage Results" MODIFIED="1740930758636" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/filewatch" />
+   </component>
+ </project>
+\ No newline at end of file
