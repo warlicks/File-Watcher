@@ -46,7 +46,7 @@ fake_data = [
 
 for data in fake_data:
     db.insert_data(
-        data["event_time"].timestamp(),
+        int(data["event_time"].timestamp()),
         data["event_type"],
         data["event_location"],
         data["file_type"],
