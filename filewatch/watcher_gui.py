@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import W, E, BooleanVar, StringVar, Toplevel, ttk, filedialog
+from tkinter import W, E, BooleanVar, StringVar, Toplevel, ttk, filedialog, messagebox, Menu
 from typing import Callable
 
 
@@ -18,6 +18,16 @@ class WatcherGUI(tk.Tk):
         self.title("File Watcher")
 
         self.geometry("800x600")
+
+
+        self.menu_bar = MenuBar(
+            self,
+            start_monitoring=self.start_watching,
+            stop_monitoring=self.stop_watching,
+            write_to_db=self.write_to_db,
+            save_report=self.save_report
+        )
+        self.config(menu=self.menu_bar)
 
 
         self.directory_selection_frame = DirectorySelection(self)
@@ -65,7 +75,6 @@ class WatcherGUI(tk.Tk):
     @property
     def stop_button(self):
         return self.frame_controls.end_button
-
 
     @property
     def dir_to_watch(self) -> str:
@@ -147,6 +156,13 @@ class WatcherGUI(tk.Tk):
             self.update()
         else:
             print(f"Status update failed: {message} ({color})")
+
+    def write_to_db(self):
+        print("Writing to database...")
+
+    def save_report(self):
+        print("Saving report...")
+
 
 class DirectorySelection(ttk.Frame):
     """Class For Managing ttk Frame that allow you to select a directory.
@@ -361,6 +377,17 @@ class QueryFrame(ttk.Frame):
         self.__generate_report_button.grid(row=4, column=3, pady=5, sticky=(W, E))
 
     @property
+    def menu_button(self):
+        return self.__menu_button
+
+    @property
+    def is_open(self):
+        return self._is_open
+
+
+
+
+    @property
     def search_button(self):
         return self.__search_button
 
@@ -561,6 +588,66 @@ class ReportGenerationFrame(Toplevel):
         fname = filedialog.asksaveasfilename(initialfile="file_activity_report.csv")
         self.__report_file_name.set(fname)
 
+class MenuBar(tk.Menu):
+    """Class for managing menu bar of our application.
+    Inherits from tk.Menu and contains File and Help menus.
+    """
+    def __init__(self, parent, start_monitoring, stop_monitoring, write_to_db, save_report):
+        super().__init__(parent)
+        self.parent = parent
+
+        self.start_monitoring = start_monitoring
+        self.stop_monitoring = stop_monitoring
+        self.write_to_db = write_to_db
+        self.save_report = save_report
+
+        self._create_menus()
+        self._bind_shortcuts()
+
+    def _create_menus(self):
+        """Create and configure the menu bar"""
+        self._create_file_menu()
+        self._create_monitor_menu()
+        self._create_help_menu()
+
+    def _create_file_menu(self):
+        """Creates file menu, also incorporates keyboard shortcuts."""
+
+        file_menu = Menu(self, tearoff=0)
+        file_menu.add_command(label="Save Report", accelerator="Ctrl+S", command=self.save_report)
+        file_menu.add_command(label="Exit", accelerator="Ctrl+Q", command=self.parent.quit)
+        self.add_cascade(label="File", menu=file_menu)
+
+    def _create_monitor_menu(self):
+        monitor_menu = Menu(self, tearoff=0)
+        monitor_menu.add_command(label="Start Monitoring", accelerator="Ctrl+M", command=self.start_monitoring)
+        monitor_menu.add_command(label="Stop Monitoring", accelerator="Ctrl+X", command=self.stop_monitoring)
+        monitor_menu.add_command(label="Write to Database", accelerator="Ctrl+D", command=self.write_to_db)
+        self.add_cascade(label="Monitor", menu=monitor_menu)
+
+    def _create_help_menu(self):
+        help_menu = Menu(self, tearoff=0)
+        help_menu.add_command(label="About", accelerator="Ctrl+H", command=self.show_about)
+        self.add_cascade(label="Help", menu=help_menu)
+
+    def _bind_shortcuts(self):
+        """Bind shortcuts to actions."""
+
+        self.parent.bind_all("<Control-s>", lambda e: self.save_report())
+        self.parent.bind_all("<Control-q>", lambda e: self.parent.quit())
+        self.parent.bind_all("<Control-m>", lambda e: self.start_monitoring())
+        self.parent.bind_all("<Control-x>", lambda e: self.stop_monitoring())
+        self.parent.bind_all("<Control-d>", lambda e: self.write_to_db())
+        self.parent.bind_all("<Control-h>", lambda e: self.show_about())
+
+    def show_about(self):
+        """Displays an "About" program section"""
+        messagebox.showinfo(
+            "About",
+            "FileWatcher Monitor v1.0\nDeveloped by Sean Warlick and Ainsley Yoshizumi\n"
+                    "This program monitors file activity and writes all activity to a SQL database."
+                    "Users can also send and generate reports"
+        )
 
 if __name__ == "__main__":
     g = WatcherGUI()
