@@ -67,6 +67,8 @@ class WatcherGUI(tk.Tk):
             pady=5,
         )  # anchor=E, side=tk.RIGHT)
 
+        #self.exit_program() = ExitWindow(self)
+
     # Define properties for things we need to pass to the Controller.
     @property
     def start_button(self):
@@ -162,6 +164,11 @@ class WatcherGUI(tk.Tk):
 
     def save_report(self):
         print("Saving report...")
+
+    def on_exit(self):
+        if self.destroy():
+            self.protocol("WM_DELETE_WINDOW", self.exit_window)
+
 
 
 class DirectorySelection(ttk.Frame):
@@ -383,9 +390,6 @@ class QueryFrame(ttk.Frame):
     @property
     def is_open(self):
         return self._is_open
-
-
-
 
     @property
     def search_button(self):
@@ -648,6 +652,21 @@ class MenuBar(tk.Menu):
                     "This program monitors file activity and writes all activity to a SQL database."
                     "Users can also send and generate reports"
         )
+
+class ExitWindow(tk.Toplevel):
+    """Class for exit window, requires confirmation from user that they want to quit program"""
+    def __init__(self, parent, exit_window):
+        super().__init__(parent)
+        self.exit_program = exit_window
+
+    def exit_window(self):
+        """On program exit, ask the user whether or not to write current contents to the database if those
+        contents have not yet been written"""
+        if messagebox.showinfo(
+            "WARNING",
+            "Do you want to quit?"):
+            self.destroy()
+        self.protocol("WM_DELETE_WINDOW", self.exit_window)
 
 if __name__ == "__main__":
     g = WatcherGUI()
