@@ -8,7 +8,7 @@ class ActionButton(tk.Button):
         super().__init__(parent, text=text)
 
 
-class QueryWindow(ttk.Labelframe):
+class QueryWindow(tk.Frame):
     """Class for managing the Query Window
 
     Manages the query frame which allows the user to make a query of the database and
@@ -26,13 +26,13 @@ class QueryWindow(ttk.Labelframe):
         Args:
             parent: parent Tkinter object.
         """
-        super().__init__(
-            parent,
+        super().__init__(parent, borderwidth=1, relief="groove")
+
+        tk.Label(
+            self,
             text="Query File Change History",
-            labelanchor="n",
-            borderwidth=10,
-            padding=(5, 5, 5, 5),
-        )
+            font=("Helvetica", "18", "bold underline"),
+        ).pack(padx=5, pady=5)
 
         self.__query_frame = QueryFrame(self)
         self.__query_frame.pack()
@@ -43,7 +43,7 @@ class QueryWindow(ttk.Labelframe):
         self.__query_result_frame = QueryResultFrame(
             self, columns=["File", "Action", "Time", "File Type", "Move Destination"]
         )
-        self.__query_result_frame.pack(fill=tk.BOTH, expand=True)
+        self.__query_result_frame.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
         self.__query_frame.clear_button.configure(
             command=self.__query_result_frame.clear_table
         )
@@ -63,10 +63,7 @@ class QueryFrame(ttk.Frame):
     Inherits from ttk.Frame
     """
 
-    def __init__(
-        self,
-        parent,
-    ):
+    def __init__(self, parent):
         """Initializes an instance of the QueryFrame class.
 
         Manages the frame and widgets that allow the user to select how they want to
@@ -75,7 +72,7 @@ class QueryFrame(ttk.Frame):
         Args:
             parent: The parent Tkinter object.
         """
-        super().__init__(parent, padding=(5, 5, 5, 5))
+        super().__init__(parent)
 
         menu_vals = [
             "File Type",
@@ -290,6 +287,11 @@ class QueryFrame(ttk.Frame):
         )
         self.__report_generation_window.grab_set()
         self.__report_generation_window.focus_set()
+
+    def _style(self):
+        s = ttk.Style()
+        s.configure("my.TLabel", background="slate gray")
+        return "my.TLabel"
 
 
 class QueryResultFrame(ttk.Frame):

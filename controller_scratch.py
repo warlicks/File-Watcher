@@ -7,7 +7,6 @@ from filewatch import watcher
 from filewatch.watcher_gui import WatcherGUI
 from filewatch.view_manager import ViewManager
 from filewatch.file_watch import FileHandler
-from filewatch.watcher import FileWatcher
 
 gui = WatcherGUI()
 handler = FileHandler()

@@ -1,19 +1,15 @@
 import tkinter as tk
-from tkinter import W, E, BooleanVar, StringVar, Toplevel, ttk, filedialog
-from tkinter import font
-from turtle import bgcolor
-from typing import Callable
+from tkinter import StringVar, ttk, filedialog, W, E
 from .query_frame import QueryResultFrame, ActionButton
 
 
-class WatcherFrame(ttk.LabelFrame):
+class WatcherFrame(ttk.Frame):
+
     def __init__(self, parent):
-        super().__init__(
-            parent,
-            text="Configure File Watching",
-            labelanchor="n",
-            borderwidth=5,
-        )
+        super().__init__(parent)
+        ttk.Label(
+            text="Configure File Watcher Settings", style=self._lable_style()
+        ).pack(pady=5, padx=5, anchor="center")
 
         self.__directory_selection_frame = DirectorySelection(self)
         self.__directory_selection_frame.pack(pady=10)
@@ -48,6 +44,11 @@ class WatcherFrame(ttk.LabelFrame):
     @property
     def stop_button(self):
         return self.__frame_controls.stop_button
+
+    def _lable_style(self):
+        s = ttk.Style()
+        s.configure("f.TLabel", font=("Helvetica", 18, "bold underline"))
+        return "f.TLabel"
 
 
 class DirectorySelection(ttk.Frame):
