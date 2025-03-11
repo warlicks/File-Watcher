@@ -48,6 +48,14 @@ class WatcherGUI(tk.Tk):
         return self.__file_watch_frame.selected_directory.get()
 
     @property
+    def file_ext_to_watch(self) -> str:
+        return self.__file_watch_frame.file_ext_to_watch
+
+    @property
+    def recursive(self) -> bool:
+        return self.__file_watch_frame.recursive
+
+    @property
     def search_button(self):
         return self.__query_frame.query_frame.search_button
 

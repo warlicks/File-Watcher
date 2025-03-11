@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import StringVar, ttk, filedialog, W, E
+from tkinter import BooleanVar, StringVar, ttk, filedialog, W, E
 from .query_frame import QueryResultFrame, ActionButton
 
 
@@ -12,7 +12,7 @@ class WatcherFrame(ttk.Frame):
         ).pack(pady=5, padx=5, anchor="center")
 
         self.__directory_selection_frame = DirectorySelection(self)
-        self.__directory_selection_frame.pack(pady=10)
+        self.__directory_selection_frame.pack(pady=10, anchor="center")
 
         self.__frame_controls = ActionFrame(self)
         self.__frame_controls.pack(pady=5)
@@ -44,6 +44,14 @@ class WatcherFrame(ttk.Frame):
     @property
     def stop_button(self):
         return self.__frame_controls.stop_button
+
+    @property
+    def file_ext_to_watch(self) -> str:
+        self.__frame_controls.file_extension
+
+    @property
+    def recursive(self) -> bool:
+        self.__frame_controls.recursive_monitor
 
     def _lable_style(self):
         s = ttk.Style()
@@ -102,12 +110,31 @@ class ActionFrame(ttk.Frame):
         # def __init__(self, parent, start_callback, stop_callback):
 
         super().__init__(parent)
+
+        self.__file_extension = StringVar()
+        self.__recursive = BooleanVar()
+        ttk.Label(self, text="Select File Extension:").grid(row=0, column=0)
+        self.__file_ext_entry = ttk.Entry(self, textvariable=self.__file_extension)
+        self.__file_ext_entry.grid(row=0, column=1)
+
+        self.__recursive_box = ttk.Checkbutton(
+            self, text="Monitor\nSub-Directories", variable=self.__recursive
+        )
+        self.__recursive_box.grid(row=0, column=2)
+
         self.start_button = ActionButton(self, "Start Watching")
-        self.start_button.pack(side=tk.LEFT, padx=5)
-        #         self.start_button.configure(command=start_callback)
+        self.start_button.grid(row=1, column=1)
 
         self.stop_button = ActionButton(self, "Stop Watching")
-        self.stop_button.pack(side=tk.LEFT, padx=5)
+        self.stop_button.grid(row=1, column=2)
+
+    @property
+    def file_extension(self) -> str:
+        return self.__file_extension.get()
+
+    @property
+    def recursive_monitor(self) -> bool:
+        return self.__recursive.get()
 
 
 class StatusLabel(ttk.Label):

@@ -40,7 +40,15 @@ class ViewManager:
         print("send_start_watching() called")  # for debugging, remove later
         print(f"Watching {self.__view.dir_to_watch}")
         self.__watcher = FileWatcher(self.__handler)
-        self.__watcher.start_watching(self.__view.dir_to_watch)
+
+        if self.__view.file_ext_to_watch == "":
+            ext = []
+        else:
+            ext = self.__view.file_ext_to_watch.split(",")
+
+        self.__watcher.start_watching(
+            self.__view.dir_to_watch, self.__view.recursive, ext
+        )
         self.__view.status_label_text.set(f"Watching {self.__view.dir_to_watch}")
         self.__view.status_label.configure(foreground="green")  # ✅ UI Update
 
