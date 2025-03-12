@@ -158,7 +158,11 @@ class FileHandler(FileSystemEventHandler):
         """
         file_type = os.path.splitext(event.src_path)
 
-        if file_type[1] in self.__watched_extension or not self.__watched_extension:
+        if (
+            file_type[1] in self.__watched_extension
+            or not self.__watched_extension
+            and not event.src_path.endswith(".DS_STORE")
+        ):
 
             temp = {
                 "event_type": event.event_type,
