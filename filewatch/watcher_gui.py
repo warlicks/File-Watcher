@@ -67,7 +67,7 @@ class WatcherGUI(tk.Tk):
             pady=5,
         )  # anchor=E, side=tk.RIGHT)
 
-        #self.exit_program() = ExitWindow(self)
+        self.protocol("WM_DELETE_WINDOW", self.on_exit)
 
     # Define properties for things we need to pass to the Controller.
     @property
@@ -166,8 +166,9 @@ class WatcherGUI(tk.Tk):
         print("Saving report...")
 
     def on_exit(self):
-        if self.destroy():
-            self.protocol("WM_DELETE_WINDOW", self.exit_window)
+        """Handles exit program request by calling ExitWindow class"""
+        exit_window = ExitWindow(self)
+        self.wait_window(exit_window)
 
 
 
@@ -655,18 +656,29 @@ class MenuBar(tk.Menu):
 
 class ExitWindow(tk.Toplevel):
     """Class for exit window, requires confirmation from user that they want to quit program"""
-    def __init__(self, parent, exit_window):
+    def __init__(self, parent):
         super().__init__(parent)
-        self.exit_program = exit_window
+        self.title("Confirm Exit")
+        self.geometry("300x150")
+        self.parent = parent
 
-    def exit_window(self):
-        """On program exit, ask the user whether or not to write current contents to the database if those
-        contents have not yet been written"""
-        if messagebox.showinfo(
-            "WARNING",
-            "Do you want to quit?"):
-            self.destroy()
-        self.protocol("WM_DELETE_WINDOW", self.exit_window)
+        tk.Label(self, text="Are you sure you wish to exit?").pack(pady=20)
+
+        button_frame = tk.Frame(self)
+        button_frame.pack(pady=10)
+
+        yes_button = tk.Button(button_frame, text="Yes", command=self.confirm_exit)
+        yes_button.pack(side=tk.LEFT, padx=5)
+
+        no_button = tk.Button(button_frame, text="No", command=self.cancel_exit)
+        no_button.pack(side=tk.RIGHT, padx=5)
+
+    def confirm_exit(self):
+        self.parent.destroy()
+        self.destroy()
+
+    def cancel_exit(self):
+        self.destroy()
 
 if __name__ == "__main__":
     g = WatcherGUI()
