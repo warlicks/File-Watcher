@@ -6,6 +6,13 @@ from .query_frame import QueryResultFrame, ActionButton
 class WatcherFrame(ttk.Frame):
 
     def __init__(self, parent):
+        """_summary_
+
+        _extended_summary_
+
+        Args:
+            parent: Parent TK object
+        """
         super().__init__(parent)
         ttk.Label(
             text="Configure File Watcher Settings", style=self._lable_style()
@@ -26,34 +33,46 @@ class WatcherFrame(ttk.Frame):
         self.__change_log.pack()
 
     @property
-    def selected_directory(self):
+    def selected_directory(self) -> StringVar:
+        """Returns the directory selected for monitoring"""
         return self.__directory_selection_frame.selected_directory
 
     @property
-    def status_label(self):
+    def status_label(self) -> "StatusLabel":
+        """Returns File Watcher Status Label"""
         return self.__status_label
 
     @property
-    def status_label_text(self):
+    def status_label_text(self) -> StringVar:
+        """Returns Status Label Text Variable"""
         return self.__status_label.status_variable
 
     @property
-    def start_button(self):
+    def start_button(self) -> ActionButton:
+        """Returns the Start Button Widget"""
         return self.__frame_controls.start_button
 
     @property
-    def stop_button(self):
+    def stop_button(self) -> ActionButton:
+        """Returns the Stop Button Widget"""
         return self.__frame_controls.stop_button
 
     @property
     def file_ext_to_watch(self) -> str:
+        """Returns the file extensions selected for monitoring"""
         self.__frame_controls.file_extension
 
     @property
     def recursive(self) -> bool:
+        """Returns the boolean indicating if sub-directories should be monitored"""
         self.__frame_controls.recursive_monitor
 
-    def _lable_style(self):
+    def _lable_style(self) -> str:
+        """Internal method modifies ttk.Label style
+        Returns:
+          String with the name of the modified style
+        """
+
         s = ttk.Style()
         s.configure("f.TLabel", font=("Helvetica", 18, "bold underline"))
         return "f.TLabel"

@@ -13,6 +13,16 @@ from fileinput import filename
 
 class ViewManager:
     def __init__(self, model: FileHandler, view: WatcherGUI):
+        """The ViewManager manages interactions between the GUI and the FileHandler
+
+        The ViewManager is the controller layer between the FileHandler and the GUI. It
+        takes us er inputs from the GUI and uses them to call the appropriate FileHandler
+        or FileWatcherDatabase methods.
+
+        Args:
+            model (FileHandler): FileHandler used to monitor for file changes.
+            view (WatcherGUI): The GUI object being used by the user.
+        """
         self.__handler = model
         self.__view = view
         self.__handler.register_observers(self)
@@ -41,6 +51,8 @@ class ViewManager:
         print(f"Watching {self.__view.dir_to_watch}")
         self.__watcher = FileWatcher(self.__handler)
 
+        # TK doesn't have a file a list variable, so we need to convert the string to
+        # a list.
         if self.__view.file_ext_to_watch == "":
             ext = []
         else:
@@ -53,7 +65,7 @@ class ViewManager:
         self.__view.status_label.configure(foreground="green")  # ✅ UI Update
 
     def send_stop_watching(self):
-        """Passes press of the Stop Watching button to the file watcher. .
+        """Passes press of the Stop Watching button to the file watcher.
 
         The method manages the interactions between the GUI and the watcher. The method
         gets attached to the GUI's stop button. When the button is pressed it calls
@@ -66,9 +78,13 @@ class ViewManager:
         self.__view.status_label.configure(foreground="red")  # ✅ UI Update
 
     def start_database_search(self):
-        """Handles DB search requests"""
+        """Manages Database Searches from the GUI
+
+        The method takes user inputs from the GUI and passes them as parameters to
+        the appropriate database query. When the query results are returned, they are
+        passed to the GUI so they can be displayed to the user.
+        """
         query_type = self.__view.query_choice.get()
-        query_value = self.__view.file_extension.get()
 
         if query_type == "File Type":
             print("Searching by file type")
@@ -139,6 +155,11 @@ class ViewManager:
             print(error_message)
 
     def generate_report(self):
+        """Manages the generation of file activity report
+
+        When a user selects the options to generate a report it takes the inputs from the
+        GUI to write the results to a file and then send them via email.
+        """
         subject = "File Activity Report"
         body = "The requested file activity report is attached."
         report_location = self._write_report(
@@ -159,7 +180,18 @@ class ViewManager:
     def _write_report(
         self, results: list, result_file: str = "./file_activity_report.csv"
     ) -> str:
+        """Internal method for writing file activity report to directory.
 
+        Saves the report to a CSV file.
+
+        Args:
+            results (list): The results of an activity query
+            result_file (str, optional): The directory where the file will be saved.
+              Defaults to "./file_activity_report.csv".
+
+        Returns:
+            str: The name of the report file.
+        """
         header = ["File", "Action", "Time", "File Type", "Move Destination"]
         report_name = result_file
         with open(report_name, "w", newline="") as csvfile:

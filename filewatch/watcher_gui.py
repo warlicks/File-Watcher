@@ -27,7 +27,8 @@ class WatcherGUI(tk.Tk):
         self.__query_frame = QueryWindow(self)
         self.__query_frame.pack(padx=5, pady=5, ipadx=5, ipady=5)
 
-    # Define properties for things we need to pass to the Controller.
+    # Define properties for things we need to pass to the Controller. This lets us keep
+    # the logic out of the GUI code.
     @property
     def status_label(self):
         """Returns File Watcher Status Label"""
@@ -115,6 +116,7 @@ class WatcherGUI(tk.Tk):
 
     @property
     def email_recipients(self) -> tk.StringVar:
+        """Returns the email address of the report recipient"""
         return self.__query_frame.query_frame.email_recipients
 
     @property

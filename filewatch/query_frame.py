@@ -4,21 +4,22 @@ from typing import Callable
 
 
 class ActionButton(tk.Button):
-    def __init__(self, parent, text):
+    def __init__(self, parent, text: str):
+        """Creates action buttons.
+
+        Wrapper around tk.Button
+
+        Args:
+            parent: Parent TK object.
+            text (str): Text displayed in the button
+        """
         super().__init__(parent, text=text)
 
 
 class QueryWindow(tk.Frame):
-    """Class for managing the Query Window
+    """Class for managing the GUI elements that allow user to query the database"""
 
-    Manages the query frame which allows the user to make a query of the database and
-    displays the results.
-    """
-
-    def __init__(
-        self,
-        parent,
-    ):
+    def __init__(self, parent):
         """Initializes an instance of the QueryWindow class
         Manages the query frame which allows the user to make a query of the database and
         displays the results.
@@ -49,19 +50,17 @@ class QueryWindow(tk.Frame):
         )
 
     @property
-    def query_frame(self):
+    def query_frame(self) -> "QueryFrame":
+        """Gets frame for the user to select database query objects."""
         return self.__query_frame
 
     @property
-    def query_result_frame(self):
+    def query_result_frame(self) -> "QueryResultFrame":
+        """Gets the gui frame that displays the database query results"""
         return self.__query_result_frame
 
 
 class QueryFrame(ttk.Frame):
-    """Class for managing frame for query options.
-
-    Inherits from ttk.Frame
-    """
 
     def __init__(self, parent):
         """Initializes an instance of the QueryFrame class.
@@ -88,7 +87,8 @@ class QueryFrame(ttk.Frame):
         self.__start_time_string = StringVar()
         self.__end_time_string = StringVar()
 
-        # Define Variables to Pass to the Report Generation Window
+        # Define Variables to Pass to the Report Generation Window. Need to be defined
+        # here so they can be passed up and exposed to the controller layer.
         self.__email_account = StringVar()
         self.__email_password = StringVar()
         self.__email_recipients = StringVar()
@@ -164,63 +164,78 @@ class QueryFrame(ttk.Frame):
         self.__generate_report_button.grid(row=4, column=4, pady=5, sticky=(W, E))
 
     @property
-    def search_button(self):
+    def search_button(self) -> ActionButton:
+        """Returns the Button Widget for Starting the Search"""
         return self.__search_button
 
     @property
-    def clear_button(self):
+    def clear_button(self) -> ActionButton:
+        """Returns the Clear Search Button Widget"""
         return self.__clear_button
 
     @property
-    def query_choice(self):
+    def query_choice(self) -> StringVar:
+        """Returns the string variable indicating how the database will be searched."""
         return self.__query_choice
 
     @property
-    def query_string(self):
+    def query_string(self) -> StringVar:
+        """Returns the file extension for the database search"""
         return self.__query_string
 
     @property
-    def query_action_type(self):
+    def query_action_type(self) -> StringVar:
+        """Returns the file action type selected when querying by action type"""
         return self.__query_action_type
 
     @property
-    def query_directory_string(self):
+    def query_directory_string(self) -> StringVar:
+        """Returns the string variable indicating how the database will be searched."""
         return self.__query_directory_sting
 
     @property
-    def start_time_string(self):
+    def start_time_string(self) -> StringVar:
+        """Returns the start timestamp when querying by time period"""
         return self.__start_time_string
 
     @property
-    def end_time_string(self):
+    def end_time_string(self) -> StringVar:
+        """Returns the end timestamp when querying by time period"""
         return self.__end_time_string
 
     @property
-    def email_sender(self):
+    def email_sender(self) -> StringVar:
+        """Returns the string variable with the email senders email address"""
         return self.__email_account
 
     @property
-    def email_password(self):
+    def email_password(self) -> StringVar:
+        """Returns the password for the senders email account when sending a report."""
         return self.__email_password
 
     @property
-    def email_recipients(self):
+    def email_recipients(self) -> StringVar:
+        """Returns the email address of the report recipient"""
         return self.__email_recipients
 
     @property
-    def report_file_name(self):
+    def report_file_name(self) -> StringVar:
+        """Returns the full file name for the file activity report"""
         return self.__report_file_name
 
     @property
-    def keep_report(self):
+    def keep_report(self) -> BooleanVar:
+        """Returns the boolean indicating if the report should be kept after being emailed."""
         return self.__keep_report
 
     @property
     def send_report_cmd(self):
+        """Returns the send report command variable"""
         return self.__send_report_cmd
 
     @send_report_cmd.setter
     def send_report_cmd(self, value: Callable):
+        """Sets the send report command"""
         self.__send_report_cmd = value
 
     def activate_query_optons(self):
@@ -288,32 +303,16 @@ class QueryFrame(ttk.Frame):
         self.__report_generation_window.grab_set()
         self.__report_generation_window.focus_set()
 
-    def _style(self):
-        s = ttk.Style()
-        s.configure("my.TLabel", background="slate gray")
-        return "my.TLabel"
-
 
 class QueryResultFrame(ttk.Frame):
-    """
-    A class used to represent a TableFrame which inherits from ttk.Frame and
-    contains a table made out of tree widgets.
-
-
-    Methods
-    -------
-    insert_row(self, values)
-        Inserts a row into the table with the given values.
-    clear_table(self)
-        Clears all rows from the table.
-    """
 
     def __init__(self, parent, columns):
-        """
+        """Creates a frame to display results
         Initializes the Treeview widget within a tkinter Frame.
+
         Args:
-            parent (tkinter.Widget): The parent widget.
-            columns (list): A list of column names for the Treeview.
+          parent (tkinter.Widget): The parent object.
+          columns (list): A list of column names for the result table.
         """
 
         super().__init__(parent)
@@ -323,10 +322,17 @@ class QueryResultFrame(ttk.Frame):
             self.__tree.column(col, anchor=tk.CENTER)
         self.__tree.pack(expand=True)
 
-    def insert_row(self, values):
+    def insert_row(self, values: tuple):
+        """Inserts results into the table.
+
+        Args:
+            values (tuple): Values being inserted into the table. Values in the tuple
+              should be in the order of the columns in the table.
+        """
         self.__tree.insert("", tk.END, values=values)
 
     def clear_table(self):
+        """Clears the table of any results presently displayed"""
         for row in self.__tree.get_children():
             self.__tree.delete(row)
 
@@ -342,6 +348,22 @@ class ReportGenerationFrame(Toplevel):
         keep_report: BooleanVar,
         submit_action: Callable,
     ):
+        """Creates New Window to Manage Sending File Activity Report
+
+        _extended_summary_
+
+        Args:
+            parent (_type_): Parent TK object
+            email_account (StringVar): StringVar for the senders email address
+            email_password (StringVar): StringVar for storing the senders email password.
+            email_recipent (StringVar): StringVar for storing the recipient email address.
+            report_file_name (StringVar): StringVar for storing the name of the
+              activity report.
+            keep_report (BooleanVar): BooleanVar indicating if the report file should be
+              kept after being sent.
+            submit_action (Callable): The method/function to be invoked when the submit
+              button is pressed by the user.
+        """
         super().__init__(parent, padx=10, pady=10)
 
         self.__report_file_name = report_file_name
@@ -370,5 +392,9 @@ class ReportGenerationFrame(Toplevel):
         self.__submit_button.config(command=lambda: submit_action())
 
     def save_report_dialog(self):
+        """Opens file dialog for user to select where to save the file
+
+        _extended_summary_
+        """
         fname = filedialog.asksaveasfilename(initialfile="file_activity_report.csv")
         self.__report_file_name.set(fname)
