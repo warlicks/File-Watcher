@@ -53,7 +53,7 @@ class ViewManager:
 
         # TK doesn't have a file a list variable, so we need to convert the string to
         # a list.
-        if self.__view.file_ext_to_watch == "":
+        if self.__view.file_ext_to_watch is None:
             ext = []
         else:
             ext = self.__view.file_ext_to_watch.split(",")
