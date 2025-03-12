@@ -67,6 +67,10 @@ class WatcherFrame(ttk.Frame):
         """Returns the boolean indicating if sub-directories should be monitored"""
         self.__frame_controls.recursive_monitor
 
+    @property
+    def insert_change_records(self):
+        return self.__change_log.insert_row
+
     def _lable_style(self) -> str:
         """Internal method modifies ttk.Label style
         Returns:

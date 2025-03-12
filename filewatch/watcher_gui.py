@@ -76,6 +76,10 @@ class WatcherGUI(tk.Tk):
         return self.__file_watch_frame.recursive
 
     @property
+    def insert_change_records(self):
+        return self.__file_watch_frame.insert_change_records
+
+    @property
     def search_button(self) -> ActionButton:
         """Returns the Button Widget for Starting the Search"""
         return self.__query_frame.query_frame.search_button
