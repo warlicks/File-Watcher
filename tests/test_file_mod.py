@@ -59,7 +59,7 @@ def test_opened_with_mod(single_level_dir):
 def test_ignore_ds_store(single_level_dir):
     """Test ability to detect file opened and unmodified"""
     time.sleep(0.5)
-    fname = os.path.abspath("./tests/rootdir/.DS_STORE")
+    fname = os.path.abspath("./tests/rootdir/.DS_Store")
     os.system(f"touch {fname}")
     time.sleep(1)
     watcher = FileWatcher(FileHandler())

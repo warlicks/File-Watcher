@@ -162,9 +162,8 @@ class FileHandler(FileSystemEventHandler):
         if (
             file_type[1] in self.__watched_extension
             or not self.__watched_extension
-            and not event.src_path.endswith(".DS_STORE")
+            and not event.src_path.endswith(".DS_Store")
         ):
-
             temp = {
                 "event_type": event.event_type,
                 "event_location": event.src_path,
@@ -192,14 +191,12 @@ class FileHandler(FileSystemEventHandler):
         if self.__event_history:
             previous_event = self.__event_history[-1]
             if (
-                (
-                    previous_event["event_type"] == "created"
-                    or previous_event["event_type"] == "deleted"
-                    or previous_event["event_type"] == "moved"
-                )
-                # and temp["dir_event"]
-                and (temp["event_time"] - previous_event["event_time"])
-                < dt.timedelta(milliseconds=500)
+                previous_event["event_type"] == "created"
+                or previous_event["event_type"] == "deleted"
+                or previous_event["event_type"] == "moved"
+                or (previous_event["event_type"] == "modified" and temp["dir_event"])
+            ) and (temp["event_time"] - previous_event["event_time"]) < dt.timedelta(
+                milliseconds=500
             ):
                 return False
             else:

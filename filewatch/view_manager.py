@@ -137,9 +137,12 @@ class ViewManager:
             if "event_time" in keys
             else None
         )
+        event_time_int = (
+            current_event["event_time"].timestamp() if "event_time" in keys else None
+        )
         file_type = current_event["file_type"] if "file_type" in keys else None
         move_destination = (
-            current_event["file_destination"] if "move_destination" in keys else None
+            current_event["file_destination"] if "file_destination" in keys else None
         )
 
         # Send to GUI
@@ -152,30 +155,10 @@ class ViewManager:
                 move_destination,
             )
         )
-        # timestamp_int = int(timestamp)
 
-        # # human readable format
-        # timestamp_human = datetime.datetime.fromtimestamp(timestamp_int).strftime(
-        #     "%Y-%m-%d %H:%M:%S"
-        # )
-
-        # log_message = (
-        #     f"{timestamp_human} - {event_type.upper()} - {filename} in {directory}"
-        # )
-        # self.__view.update_log(log_message)
-
-        # try:
-        #     conn = sqlite3.connect("file_watcher.db")
-        #     cursor = conn.cursor()
-        #     query = """INSERT INTO file_events (filename, directory, action, timestamp
-        #             VALUES (?, ?, ?, ?)"""
-        #     cursor.execute(query, (filename, directory, event_type, timestamp_int))
-        #     conn.commit()
-        #     conn.close()
-        # except sqlite3.Error as e:
-        #     error_message = f"Database error: {str(e)}"
-        #     self.__view.update_log(error_message)
-        #     print(error_message)
+        self.__db.insert_data(
+            event_time_int, event_type, location, file_type, move_destination
+        )
 
     def generate_report(self):
         """Manages the generation of file activity report
