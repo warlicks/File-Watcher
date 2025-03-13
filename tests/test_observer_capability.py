@@ -22,6 +22,14 @@ class MockObserverFail:
         pass
 
 
+class MockObserveIncrement:
+    def __init__(self) -> None:
+        self.n_calls = 0
+
+    def notify(self, current_event):
+        self.n_calls += 1
+
+
 def test_observer_registration():
     """Test that we can register and deregister observers."""
     m = MockObserver()
@@ -113,3 +121,19 @@ def test_observer_notification_on_modififed(single_level_dir, capsys):
     capture = capsys.readouterr()
 
     assert capture.out.startswith(f"{fname} was modified")
+
+
+def test_single_notify_call(single_level_dir):
+    """Tests that we don't get notifications from directory level modifications"""
+    m = MockObserveIncrement()
+    fname = os.path.abspath("./tests/rootdir/test_0.ext")
+    watcher = FileWatcher(FileHandler())
+    watcher.handler.register_observers(m)
+    watcher.start_watching("./tests/rootdir")
+
+    os.system(f"rm {fname}")
+    time.sleep(1)
+
+    watcher.stop_watching()
+
+    assert m.n_calls == 1
