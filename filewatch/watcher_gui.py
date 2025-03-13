@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import messagebox, Menu
+from tkinter import StringVar, messagebox, Menu
 from typing import Callable
 from .file_change_frame import WatcherFrame
 from .query_frame import ActionButton, QueryWindow
@@ -66,9 +66,9 @@ class WatcherGUI(tk.Tk):
         return self.__file_watch_frame.selected_directory.get()
 
     @property
-    def file_ext_to_watch(self) -> str:
+    def monitor_file_extension(self) -> StringVar:
         """Returns the file extensions selected for monitoring"""
-        return self.__file_watch_frame.file_ext_to_watch
+        return self.__file_watch_frame.monitor_file_extension
 
     @property
     def recursive(self) -> bool:

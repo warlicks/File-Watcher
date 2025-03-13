@@ -106,6 +106,7 @@ class FileHandler(FileSystemEventHandler):
             representing the creation of a file or directory.
             See https://python-watchdog.readthedocs.io/en/stable/api.html#watchdog.events.FileSystemEvent
         """
+        print(event)
         if event.event_type == "created":
             file_type = os.path.splitext(event.src_path)
             if file_type[1] in self.__watched_extension or not self.__watched_extension:
@@ -113,6 +114,7 @@ class FileHandler(FileSystemEventHandler):
                     "event_type": event.event_type,
                     "event_location": event.src_path,
                     "dir_event": event.is_directory,
+                    "file_type": file_type[1],
                     "event_time": dt.datetime.now(),
                 }
                 # TODO: refactor this to take an event not the dict.
@@ -168,6 +170,7 @@ class FileHandler(FileSystemEventHandler):
                 "event_type": event.event_type,
                 "event_location": event.src_path,
                 "dir_event": event.is_directory,
+                "file_type": file_type[1],
                 "event_time": dt.datetime.now(),
             }
             to_notify = self._reconcile_modified_events(temp)
@@ -259,6 +262,7 @@ class FileHandler(FileSystemEventHandler):
                 "event_type": event.event_type,
                 "event_location": event.src_path,
                 "file_destination": event.dest_path,
+                "file_type": os.path.splitext(event.src_path)[1],
                 "dir_event": event.is_directory,
                 "event_time": datetime.datetime.now(),
             }
@@ -266,6 +270,7 @@ class FileHandler(FileSystemEventHandler):
             self.__current_event = {
                 "event_type": event.event_type,
                 "event_location": event.src_path,
+                "file_type": os.path.splitext(event.src_path)[1],
                 "event_time": datetime.datetime.now(),
             }
 

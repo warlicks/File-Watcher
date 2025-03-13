@@ -47,16 +47,14 @@ class ViewManager:
         gets attached to the GUI's start button. When the button is pressed it calls
         the watcher's start_watching method.
         """
-        print("send_start_watching() called")  # for debugging, remove later
-        print(f"Watching {self.__view.dir_to_watch}")
         self.__watcher = FileWatcher(self.__handler)
 
         # TK doesn't have a file a list variable, so we need to convert the string to
         # a list.
-        if self.__view.file_ext_to_watch is None:
+        if self.__view.monitor_file_extension.get() == "":
             ext = []
         else:
-            ext = self.__view.file_ext_to_watch.split(",")
+            ext = self.__view.monitor_file_extension.get().split(",")
 
         self.__watcher.start_watching(
             self.__view.dir_to_watch, self.__view.recursive, ext
@@ -87,17 +85,14 @@ class ViewManager:
         query_type = self.__view.query_choice.get()
 
         if query_type == "File Type":
-            print("Searching by file type")
             result = self.__db.query_by_file_extension(self.__view.file_extension.get())
 
         elif query_type == "File Action":
-            print("Search By File Action")
             result = self.__db.query_by_event_type(
                 self.__view.query_action_type.get().lower()
             )
 
         elif query_type == "File Directory":
-            print("Search By File Directory")
             result = self.__db.query_by_event_location(
                 self.__view.query_directory_string.get()
             )
