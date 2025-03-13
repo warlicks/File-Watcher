@@ -11,8 +11,8 @@ def test_report_writing(single_level_dir):
         ["path/to/file2.txt", "deleted", "2023-01-01 11:25:10", ".txt", None],
         ["path/to/file3.txt", "modified", "2023-01-01 11:22:20", ".txt", None],
     ]
-    watcher = FileWatcher(FileHandler())
-    vm = ViewManager(watcher, WatcherGUI())
+
+    vm = ViewManager(FileHandler(), WatcherGUI())
     vm._write_report(test_result, "./tests/rootdir/test_report.csv")
     assert os.path.exists("./tests/rootdir/test_report.csv")
     with open("./tests/rootdir/test_report.csv", "r") as f:
