@@ -116,8 +116,9 @@ class FileHandler(FileSystemEventHandler):
                     "event_time": dt.datetime.now(),
                 }
                 # TODO: refactor this to take an event not the dict.
-                self._reconcile_created_events(temp)
-                self.notify()
+                to_notify = self._reconcile_created_events(temp)
+                if to_notify:
+                    self.notify()
 
     def on_moved(self, event: Union[DirMovedEvent, FileMovedEvent]) -> None:
         """Watches for file or directory being moved.
@@ -170,8 +171,9 @@ class FileHandler(FileSystemEventHandler):
                 "dir_event": event.is_directory,
                 "event_time": dt.datetime.now(),
             }
-            self._reconcile_modified_events(temp)
-            self.notify()
+            to_notify = self._reconcile_modified_events(temp)
+            if to_notify:
+                self.notify()
 
     def _reconcile_modified_events(self, temp: dict):
         """Determines if a modified event was triggered by another event
@@ -199,13 +201,15 @@ class FileHandler(FileSystemEventHandler):
                 and (temp["event_time"] - previous_event["event_time"])
                 < dt.timedelta(milliseconds=500)
             ):
-                return
+                return False
             else:
                 self.__event_history.append(temp)
                 self.__current_event = temp
+                return True
         else:
             self.__event_history.append(temp)
             self.__current_event = temp
+            return True
 
     def _reconcile_created_events(self, temp):
         """Determines if a created event was triggered by another event
@@ -231,14 +235,17 @@ class FileHandler(FileSystemEventHandler):
                 self.__event_history.pop()
                 self.__event_history.append(temp)
                 self.__current_event = temp
+                return True
             elif previous_event["event_type"] == "created":
                 self.__event_history.append(temp)
                 self.__current_event = temp
+                return True
             else:
-                return
+                return False
         else:
             self.__event_history.append(temp)
             self.__current_event = temp
+            return True
 
     def _event_actions(self, event):
         """Internal method for processing event information
@@ -299,5 +306,6 @@ class FileHandler(FileSystemEventHandler):
 
     def notify(self) -> None:
         """Notify all the observers of an event change."""
+
         for observer in self.__registered_observers:
             observer.notify(self.current_event)
