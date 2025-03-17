@@ -84,3 +84,7 @@ def test_file_deletion_in_parent_dir(single_sub_directory):
 
     assert not watcher.handler.current_event
     assert not watcher.handler.event_history
+
+
+# TODO: Write Test Case For When the watched directory is deleted. This event should be a
+# deleted event

@@ -58,14 +58,18 @@ class WatcherFrame(ttk.Frame):
         return self.__frame_controls.stop_button
 
     @property
-    def file_ext_to_watch(self) -> str:
+    def monitor_file_extension(self) -> StringVar:
         """Returns the file extensions selected for monitoring"""
-        self.__frame_controls.file_extension
+        return self.__frame_controls.monitor_file_extension
 
     @property
     def recursive(self) -> bool:
         """Returns the boolean indicating if sub-directories should be monitored"""
-        self.__frame_controls.recursive_monitor
+        return self.__frame_controls.recursive_monitor
+
+    @property
+    def insert_change_records(self):
+        return self.__change_log.insert_row
 
     def _lable_style(self) -> str:
         """Internal method modifies ttk.Label style
@@ -121,25 +125,22 @@ class ActionFrame(ttk.Frame):
     def __init__(self, parent):
         """Initializes the ActionFrame with buttons to start and stop watching a directory.
 
-
         Args:
             parent: Parent Tkinter object
         """
 
-        # def __init__(self, parent, start_callback, stop_callback):
-
         super().__init__(parent)
-
-        self.__file_extension = StringVar()
+        self.__monitor_file_extension = tk.StringVar()
         self.__recursive = BooleanVar()
-        ttk.Label(self, text="Select File Extension:").grid(row=0, column=0)
-        self.__file_ext_entry = ttk.Entry(self, textvariable=self.__file_extension)
-        self.__file_ext_entry.grid(row=0, column=1)
 
-        self.__recursive_box = ttk.Checkbutton(
+        ttk.Label(self, text="Select File Extension:").grid(row=0, column=0)
+        self.entry = ttk.Entry(self, textvariable=self.__monitor_file_extension)
+        self.entry.grid(row=0, column=1)
+        self.entry.config(state="active")
+
+        ttk.Checkbutton(
             self, text="Monitor\nSub-Directories", variable=self.__recursive
-        )
-        self.__recursive_box.grid(row=0, column=2)
+        ).grid(row=0, column=2)
 
         self.start_button = ActionButton(self, "Start Watching")
         self.start_button.grid(row=1, column=1)
@@ -148,8 +149,8 @@ class ActionFrame(ttk.Frame):
         self.stop_button.grid(row=1, column=2)
 
     @property
-    def file_extension(self) -> str:
-        return self.__file_extension.get()
+    def monitor_file_extension(self) -> StringVar:
+        return self.__monitor_file_extension
 
     @property
     def recursive_monitor(self) -> bool:

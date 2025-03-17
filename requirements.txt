@@ -34,3 +34,4 @@ watchdog==6.0.0
 wcwidth
 wheel==0.45.1
 zipp
+yagmail

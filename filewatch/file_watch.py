@@ -106,6 +106,7 @@ class FileHandler(FileSystemEventHandler):
             representing the creation of a file or directory.
             See https://python-watchdog.readthedocs.io/en/stable/api.html#watchdog.events.FileSystemEvent
         """
+        print(event)
         if event.event_type == "created":
             file_type = os.path.splitext(event.src_path)
             if file_type[1] in self.__watched_extension or not self.__watched_extension:
@@ -113,11 +114,13 @@ class FileHandler(FileSystemEventHandler):
                     "event_type": event.event_type,
                     "event_location": event.src_path,
                     "dir_event": event.is_directory,
+                    "file_type": file_type[1],
                     "event_time": dt.datetime.now(),
                 }
                 # TODO: refactor this to take an event not the dict.
-                self._reconcile_created_events(temp)
-                self.notify()
+                to_notify = self._reconcile_created_events(temp)
+                if to_notify:
+                    self.notify()
 
     def on_moved(self, event: Union[DirMovedEvent, FileMovedEvent]) -> None:
         """Watches for file or directory being moved.
@@ -158,16 +161,21 @@ class FileHandler(FileSystemEventHandler):
         """
         file_type = os.path.splitext(event.src_path)
 
-        if file_type[1] in self.__watched_extension or not self.__watched_extension:
-
+        if (
+            file_type[1] in self.__watched_extension
+            or not self.__watched_extension
+            and not event.src_path.endswith(".DS_Store")
+        ):
             temp = {
                 "event_type": event.event_type,
                 "event_location": event.src_path,
                 "dir_event": event.is_directory,
+                "file_type": file_type[1],
                 "event_time": dt.datetime.now(),
             }
-            self._reconcile_modified_events(temp)
-            self.notify()
+            to_notify = self._reconcile_modified_events(temp)
+            if to_notify:
+                self.notify()
 
     def _reconcile_modified_events(self, temp: dict):
         """Determines if a modified event was triggered by another event
@@ -186,22 +194,22 @@ class FileHandler(FileSystemEventHandler):
         if self.__event_history:
             previous_event = self.__event_history[-1]
             if (
-                (
-                    previous_event["event_type"] == "created"
-                    or previous_event["event_type"] == "deleted"
-                    or previous_event["event_type"] == "moved"
-                )
-                # and temp["dir_event"]
-                and (temp["event_time"] - previous_event["event_time"])
-                < dt.timedelta(milliseconds=500)
+                previous_event["event_type"] == "created"
+                or previous_event["event_type"] == "deleted"
+                or previous_event["event_type"] == "moved"
+                or (previous_event["event_type"] == "modified" and temp["dir_event"])
+            ) and (temp["event_time"] - previous_event["event_time"]) < dt.timedelta(
+                milliseconds=500
             ):
-                return
+                return False
             else:
                 self.__event_history.append(temp)
                 self.__current_event = temp
+                return True
         else:
             self.__event_history.append(temp)
             self.__current_event = temp
+            return True
 
     def _reconcile_created_events(self, temp):
         """Determines if a created event was triggered by another event
@@ -227,14 +235,17 @@ class FileHandler(FileSystemEventHandler):
                 self.__event_history.pop()
                 self.__event_history.append(temp)
                 self.__current_event = temp
+                return True
             elif previous_event["event_type"] == "created":
                 self.__event_history.append(temp)
                 self.__current_event = temp
+                return True
             else:
-                return
+                return False
         else:
             self.__event_history.append(temp)
             self.__current_event = temp
+            return True
 
     def _event_actions(self, event):
         """Internal method for processing event information
@@ -251,6 +262,7 @@ class FileHandler(FileSystemEventHandler):
                 "event_type": event.event_type,
                 "event_location": event.src_path,
                 "file_destination": event.dest_path,
+                "file_type": os.path.splitext(event.src_path)[1],
                 "dir_event": event.is_directory,
                 "event_time": datetime.datetime.now(),
             }
@@ -258,6 +270,7 @@ class FileHandler(FileSystemEventHandler):
             self.__current_event = {
                 "event_type": event.event_type,
                 "event_location": event.src_path,
+                "file_type": os.path.splitext(event.src_path)[1],
                 "event_time": datetime.datetime.now(),
             }
 
@@ -295,5 +308,6 @@ class FileHandler(FileSystemEventHandler):
 
     def notify(self) -> None:
         """Notify all the observers of an event change."""
+
         for observer in self.__registered_observers:
             observer.notify(self.current_event)

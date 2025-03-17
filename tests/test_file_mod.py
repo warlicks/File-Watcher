@@ -54,3 +54,19 @@ def test_opened_with_mod(single_level_dir):
 
     assert watcher.handler.current_event["event_type"] == "modified"
     assert os.path.abspath(watcher.handler.current_event["event_location"]) == fname
+
+
+def test_ignore_ds_store(single_level_dir):
+    """Test ability to detect file opened and unmodified"""
+    time.sleep(0.5)
+    fname = os.path.abspath("./tests/rootdir/.DS_Store")
+    os.system(f"touch {fname}")
+    time.sleep(1)
+    watcher = FileWatcher(FileHandler())
+    watcher.start_watching("./tests/rootdir")
+
+    os.system(f"echo 'x=2\ny=3\nx_y' > {fname}")
+    time.sleep(1)
+    watcher.stop_watching()
+
+    assert watcher.handler.current_event is None

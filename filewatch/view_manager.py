@@ -47,16 +47,14 @@ class ViewManager:
         gets attached to the GUI's start button. When the button is pressed it calls
         the watcher's start_watching method.
         """
-        print("send_start_watching() called")  # for debugging, remove later
-        print(f"Watching {self.__view.dir_to_watch}")
         self.__watcher = FileWatcher(self.__handler)
 
         # TK doesn't have a file a list variable, so we need to convert the string to
         # a list.
-        if self.__view.file_ext_to_watch is None:
+        if self.__view.monitor_file_extension.get() == "":
             ext = []
         else:
-            ext = self.__view.file_ext_to_watch.split(",")
+            ext = self.__view.monitor_file_extension.get().split(",")
 
         self.__watcher.start_watching(
             self.__view.dir_to_watch, self.__view.recursive, ext
@@ -87,17 +85,14 @@ class ViewManager:
         query_type = self.__view.query_choice.get()
 
         if query_type == "File Type":
-            print("Searching by file type")
             result = self.__db.query_by_file_extension(self.__view.file_extension.get())
 
         elif query_type == "File Action":
-            print("Search By File Action")
             result = self.__db.query_by_event_type(
                 self.__view.query_action_type.get().lower()
             )
 
         elif query_type == "File Directory":
-            print("Search By File Directory")
             result = self.__db.query_by_event_location(
                 self.__view.query_directory_string.get()
             )
@@ -118,7 +113,7 @@ class ViewManager:
                 (row[0], row[1], dt.datetime.fromtimestamp(row[2]), row[3], row[4])
             )
 
-    def notify(self):
+    def notify(self, current_event: dict):
         """Handles notifications from the FileWatcher by updating GUI log panel w event
         and inserts event into DB
 
@@ -129,30 +124,36 @@ class ViewManager:
             timestamp (float): Timestamp of when event occured
 
         """
-        timestamp_int = int(timestamp)
-
-        # human readable format
-        timestamp_human = datetime.datetime.fromtimestamp(timestamp_int).strftime(
-            "%Y-%m-%d %H:%M:%S"
+        keys = current_event.keys()
+        location = current_event["event_location"] if "event_location" in keys else None
+        event_type = current_event["event_type"] if "event_type" in keys else None
+        event_time_str = (
+            current_event["event_time"].strftime("%Y-%m-%d %H:%M:%S")
+            if "event_time" in keys
+            else None
+        )
+        event_time_int = (
+            current_event["event_time"].timestamp() if "event_time" in keys else None
+        )
+        file_type = current_event["file_type"] if "file_type" in keys else None
+        move_destination = (
+            current_event["file_destination"] if "file_destination" in keys else None
         )
 
-        log_message = (
-            f"{timestamp_human} - {event_type.upper()} - {filename} in {directory}"
+        # Send to GUI
+        self.__view.insert_change_records(
+            (
+                location,
+                event_type,
+                event_time_str,
+                file_type,
+                move_destination,
+            )
         )
-        self.__view.update_log(log_message)
 
-        try:
-            conn = sqlite3.connect("file_watcher.db")
-            cursor = conn.cursor()
-            query = """INSERT INTO file_events (filename, directory, action, timestamp 
-                    VALUES (?, ?, ?, ?)"""
-            cursor.execute(query, (filename, directory, event_type, timestamp_int))
-            conn.commit()
-            conn.close()
-        except sqlite3.Error as e:
-            error_message = f"Database error: {str(e)}"
-            self.__view.update_log(error_message)
-            print(error_message)
+        self.__db.insert_data(
+            event_time_int, event_type, location, file_type, move_destination
+        )
 
     def generate_report(self):
         """Manages the generation of file activity report
