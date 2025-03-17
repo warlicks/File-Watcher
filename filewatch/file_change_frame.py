@@ -130,7 +130,7 @@ class ActionFrame(ttk.Frame):
         """
 
         super().__init__(parent)
-        self.__monitor_file_extension = tk.StringVar(value="THIS IS BROKEN")
+        self.__monitor_file_extension = tk.StringVar()
         self.__recursive = BooleanVar()
 
         ttk.Label(self, text="Select File Extension:").grid(row=0, column=0)
