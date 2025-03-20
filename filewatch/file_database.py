@@ -134,7 +134,7 @@ class FileWatcherDatabase:
         conn = self.create_database_connection()
         try:
             c = conn.cursor()
-            c.execute(self.__event_location_query(), (event_location,))
+            c.execute(self.__event_location_query(), ((f"{event_location}%",)))
             rows = c.fetchall()
             return rows
         except sqlite3.Error as e:
